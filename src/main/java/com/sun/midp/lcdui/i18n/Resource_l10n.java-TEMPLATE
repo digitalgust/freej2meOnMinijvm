@@ -1,0 +1,175 @@
+/*
+ * @(#)Resource_l10n.java-TEMPLATE	1.7 02/09/19 @(#)
+ *
+ * Copyright (c) 2000 Sun Microsystems, Inc.  All rights reserved.
+ * PROPRIETARY/CONFIDENTIAL
+ * Use is subject to license terms.
+ */
+
+package com.sun.midp.lcdui.i18n;
+
+/*
+ * A template file for the localization of Resource.java.
+ */
+
+/**
+ * Change the class and file name to Resource_<your locale>.
+ */
+public class Resource_l10n extends com.sun.midp.lcdui.Resource {
+    /**
+     * DO NOT TOUCH.
+     */
+    public Object[][] getContents() {
+        return contents;
+    }
+
+    /**
+     * Translate the English word(s) or sentence in the left
+     * paranthese and put the translation into the right side.
+     */
+    static final Object[][] contents = {
+
+        // Alert
+        {"Done", ""},
+
+        // DateField, TextField
+        {"Back", ""},
+        {"Save", ""},
+
+        // DateField
+        {"noon", ""},
+        {"PM", ""},
+        {"mid.", ""},
+        {"AM", ""},
+        {"<date>", ""},
+        {"<time>", ""},
+        {"<date/time>", ""},
+        {"Sun", ""},
+        {"Mon", ""},
+        {"Tue", ""},
+        {"Wed", ""},
+        {"Thu", ""},
+        {"Fri", ""},
+        {"Sat", ""},
+        {"January", ""},
+        {"February", ""},
+        {"March", ""},
+        {"April", ""},
+        {"May", ""},
+        {"June", ""},
+        {"July", ""},
+        {"August", ""},
+        {"September", ""},
+        {"October", ""},
+        {"November", ""},
+        {"December", ""},
+        {"Jan", ""},
+        {"Feb", ""},
+        {"Mar", ""},
+        {"Apr", ""},
+        {"May", ""},
+        {"Jun", ""},
+        {"Jul", ""},
+        {"Aug", ""},
+        {"Sep", ""},
+        {"Oct", ""},
+        {"Nov", ""},
+        {"Dec", ""},
+
+        // Selector
+        {"About", ""},
+        {"Copyright (c) 2000 Sun Microsystems, Inc.  All rights reserved.\n"
+         + "Use is subject to license terms.", ""},
+        {"Copyright (c) 2000 Sun Microsystems, Inc. All rights reserved.\n"
+         + "Use is subject to license terms.\n"
+         + "Third-party software, including font technology, is copyrighted "
+         + "and licensed from Sun suppliers.  Sun, Sun Microsystems, the Sun "
+         + "logo, J2ME, the Java Coffee Cup logo, and  Java are trademarks "
+         + "or registered trademarks of Sun Microsystems, Inc. in the U.S. "
+         + "and other countries.\n"
+         + "Federal Acquisitions: Commercial Software - Government Users "
+         + "Subject to Standard License Terms and Conditions.\n\n"  
+         + "Copyright (c) 2002 Sun Microsystems, Inc. Tous droits réservés.\n"
+         + "Distribué par des licences qui en restreignent l'utilisation.\n"
+         + "Le logiciel détenu par des tiers, et qui comprend la technologie "
+         + "relative aux polices de caractères, est protégé par un copyright "
+         + "et licencié par des fournisseurs de Sun. Sun, Sun Microsystems, "
+         + "le logo Sun, J2ME, le logo Java Coffee Cup, et Java sont des "
+         + "marques de fabrique ou des marques déposées de Sun Microsystems, "
+         + "Inc. aux Etats-Unis et dans d'autres pays.", ""},
+        {"About Wireless Profile", ""},
+        {"Choose One:", ""},
+        {"Can not start: ", ""}, 
+        {"Exception: ", ""},
+
+	// system menu and popup choice group
+	("1234567890", "");
+	{"Menu", ""},
+	// {"Back", ""}, // already exists above
+	{"Cancel", ""},
+
+        // Image files for splash screens.  keep these intact unless
+        // you really need to change these
+        {"/icons/JavaPowered-8.png", "/icons/JavaPowered-8.png"},
+        {"/icons/JavaPowered-2.png", "/icons/JavaPowered-2.png"},
+    };
+
+
+    /**
+     * Returns a formatted date string that is suited for the target
+     * language.  In English, this will return:
+     *
+     *     "Fri, 05 Dec 2000" 
+     */
+    public String getLocalizedDateString(String dayOfWeek, String date, 
+                                         String month, String year) {
+        return dayOfWeek + ", " + date + " " + month + " " + year; 
+    }
+
+    /**
+     * Returns a formatted time string that is suited for the target
+     * language.  In English, this will return;
+     *
+     *     "10:05:59 PM"
+     *
+     * Note that ampm can be null.
+     */
+    public String getLocalizedTimeString(String hour, String min, 
+                                         String sec, String ampm) {
+        return hour + ":" + min + ":" + sec + " " + 
+            ((ampm == null) ? "" : ampm); 
+    }
+
+    /**
+     * Returns a formatted date and time string that is suited for the
+     * target language.  In English, this will return:
+     *
+     *     "Fri, 05 Dec 2000 10:05:59 PM"
+     * 
+     * Note that ampm can be null.
+     */
+    public String getLocalizedDateTimeString(String dayOfWeek, String date, 
+                                             String month, String year,
+                                             String hour, String min, 
+                                             String sec, String ampm) {
+        return dayOfWeek + ", " + date + " " + month + " " + year + " " +
+            hour + ":" + min + ":" + sec + " " + 
+            ((ampm == null) ? "" : ampm); 
+    }
+
+    /**
+     * Returns what the first day of the week is; e.g., Sunday in US,
+     * Monday in France.
+     */
+    public int getLocalizedFirstDayOfWeek() {
+        return java.util.Calendar.MONDAY;
+    }
+
+    /**
+     * Returns whether the AM_PM field comes after the time field or
+     * not.  
+     */
+    public boolean isLocalizedAMPMafterTime() {
+        return true;
+    }
+}

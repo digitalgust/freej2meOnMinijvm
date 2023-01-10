@@ -8,7 +8,6 @@
 
 package javax.microedition.io;
 
-import javax.cldc.io.StreamConnection;
 
 /**
  * This interface defines a logical serial port connection.

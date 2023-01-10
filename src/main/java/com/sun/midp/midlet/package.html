@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<!--
+
+  @(#)package.html	1.7 02/07/24 @(#)
+ 
+  Copyright (c) 2000-2001 Sun Microsystems, Inc.  All rights reserved.
+  PROPRIETARY/CONFIDENTIAL
+  Use is subject to license terms.
+
+-->
+</head>
+<body bgcolor="white">
+ Provides the functions of the runtime management of MIDlets and suites in
+ conjunction with the javax.microedition.midlet package.
+<p>
+ The Scheduler is subclassable and can be replaced in a particular 
+ implementation to be able to change the handling of state changes in
+ MIDlets and the interactions with foreground and background states of
+ the user interface.</p>
+<p>
+ For security purposes the Scheduler is the anchor of trust internally for
+ the MIDP API, restricted methods obtain the Scheduler for a MIDlet suite
+ inorder to check the properties and actions of a suite. Because of this, there
+ MUST only be one a MIDlet suite per Scheduler. Also a method can assume that
+ the application manager is the caller if there is no suite scheduled.</p>
+
+@since MIDP 1.0
+</body>
+</html>
