@@ -1,0 +1,14 @@
+.DS_Store
+.idea
+
+Thumbs.db
+/build
+/target
+
+dist
+
+cmake-build-debug
+cmake-build-release
+
+
+.svn
