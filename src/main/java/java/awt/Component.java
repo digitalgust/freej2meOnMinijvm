@@ -14,13 +14,6 @@ public class Component implements ImageObserver, MenuContainer,
     transient GObject peer;
     Graphics gGraphics;
 
-    int x;
-
-    int y;
-
-    int width;
-
-    int height;
 
     public GObject getPeer() {
         return peer;
@@ -39,12 +32,12 @@ public class Component implements ImageObserver, MenuContainer,
     }
 
     public int getWidth() {
-        return width;
+        return (int) peer.getW();
     }
 
 
     public int getHeight() {
-        return height;
+        return (int) peer.getH();
     }
 
     public Color getForeground() {

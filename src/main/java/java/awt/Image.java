@@ -20,15 +20,9 @@ public abstract class Image {
     public static final Object UndefinedProperty = new Object();
 
     public Image getScaledInstance(int width, int height, int hints) {
-        ImageFilter filter;
-        if ((hints & (SCALE_SMOOTH | SCALE_AREA_AVERAGING)) != 0) {
-            filter = new AreaAveragingScaleFilter(width, height);
-        } else {
-            filter = new ReplicateScaleFilter(width, height);
-        }
-        ImageProducer prod;
-        prod = new FilteredImageSource(getSource(), filter);
-        return Toolkit.getDefaultToolkit().createImage(prod);
+
+        //return Toolkit.getDefaultToolkit().createImage(prod);
+        return null;
     }
 
     public static final int SCALE_DEFAULT = 1;

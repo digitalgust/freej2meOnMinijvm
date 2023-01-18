@@ -11,6 +11,7 @@ public class J2meEmu extends GApplication {
 
     static J2meEmu mainApp;
     GForm gform;
+    Thread thread;
 
     public static J2meEmu getInstance() {
         return mainApp;
@@ -26,7 +27,13 @@ public class J2meEmu extends GApplication {
             Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationLandscapeLeft);
             Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
             gform=new GForm(null);
-            main(null);
+            thread=new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    main(new String[0]);
+                }
+            });
+            thread.start();
         }
         return gform;
     }
