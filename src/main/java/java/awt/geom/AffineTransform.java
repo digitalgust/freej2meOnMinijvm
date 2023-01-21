@@ -3090,33 +3090,6 @@ public class AffineTransform {
         /* NOTREACHED */
     }
 
-    /**
-     * Returns a new {@link Shape} object defined by the geometry of the
-     * specified <code>Shape</code> after it has been transformed by
-     * this transform.
-     *
-     * @param pSrc the specified <code>Shape</code> object to be
-     *             transformed by this transform.
-     * @return a new <code>Shape</code> object that defines the geometry
-     * of the transformed <code>Shape</code>.
-     */
-    public Shape createTransformedShape(Shape pSrc) {
-        if (pSrc == null) {
-            return null;
-        }
-
-        if (pSrc instanceof GeneralPath) {
-            return ((GeneralPath) pSrc).createTransformedShape(this);
-        } else {
-            PathIterator pi = pSrc.getPathIterator(this);
-            GeneralPath gp = new GeneralPath(pi.getWindingRule());
-            gp.append(pi, false);
-            return gp;
-        }
-
-        /* NOTREACHED */
-    }
-
     // Round values to sane precision for printing
     // Note that Math.sin(Math.PI) has an error of about 10^-16
     private static double _matround(double matval) {

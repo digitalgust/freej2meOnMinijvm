@@ -3,6 +3,9 @@ package java.awt;
 public class Rectangle {
     public int x, y, width, height;
 
+    public Rectangle() {
+
+    }
 
     public Rectangle(int x, int y, int width, int height) {
         this.x = x;

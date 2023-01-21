@@ -4,7 +4,12 @@ import org.mini.apploader.GApplication;
 import org.mini.glfm.Glfm;
 import org.mini.gui.GCallBack;
 import org.mini.gui.GForm;
+import org.mini.gui.GFrame;
+import org.mini.gui.GToolkit;
 import org.recompile.freej2me.FreeJ2ME;
+
+import java.io.File;
+import java.io.FileFilter;
 
 public class J2meEmu extends GApplication {
 
@@ -26,14 +31,20 @@ public class J2meEmu extends GApplication {
         if (gform == null) {
             Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationLandscapeLeft);
             Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
-            gform=new GForm(null);
-            thread=new Thread(new Runnable() {
+            gform = new GForm(null);
+
+            GFrame chooser = GToolkit.getFileChooser(gform, "Select a j2me midlet jar", null, new FileFilter() {
                 @Override
-                public void run() {
-                    main(new String[0]);
+                public boolean accept(File file) {
+                    return file.getName().endsWith(".jar") || file.isDirectory();
                 }
-            });
-            thread.start();
+            }, gform.getDeviceWidth(), gform.getDeviceHeight(), (gobj) -> {
+                String[] args = new String[1];
+                File f = gobj.getAttachment();
+                args[0] = "file:" + f.getAbsolutePath();
+                main(args);
+            }, null);
+            gform.add(chooser);
         }
         return gform;
     }

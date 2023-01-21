@@ -16,6 +16,8 @@ public class Container extends Component {
 
     public Component add(Component comp) {
         ((GContainer) peer).add(comp.peer);
+        comp.parent = this;
+        comp.setSize(getWidth(), getHeight());
         return comp;
     }
 

@@ -6,6 +6,7 @@ import org.mini.gui.GObject;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serializable;
 
@@ -13,10 +14,15 @@ public class Component implements ImageObserver, MenuContainer,
         Serializable {
     transient GObject peer;
     Graphics gGraphics;
+    Container parent;
 
 
     public GObject getPeer() {
         return peer;
+    }
+
+    public Container getParent() {
+        return parent;
     }
 
     public void setLocation(int x, int y) {
@@ -113,4 +119,9 @@ public class Component implements ImageObserver, MenuContainer,
     public boolean isVisible() {
         return peer.isVisible();
     }
+
+    public void paint(Graphics g) {
+    }
+
+
 }

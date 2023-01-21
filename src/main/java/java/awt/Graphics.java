@@ -2,6 +2,7 @@ package java.awt;
 
 import org.mini.gui.GGraphics;
 import org.mini.gui.GObject;
+import org.mini.gui.ImageMutable;
 import org.mini.nanovg.Nanovg;
 
 import javax.microedition.lcdui.game.Layer;
@@ -43,6 +44,9 @@ public class Graphics extends GGraphics {
     }
 
     public FontMetrics getFontMetrics() {
+        if (fontMetrics == null) {
+            fontMetrics = new FontMetrics(font);
+        }
         return fontMetrics;
     }
 
@@ -51,8 +55,19 @@ public class Graphics extends GGraphics {
         drawString(str, x, y, GGraphics.LEFT | GGraphics.BASELINE);
     }
 
-    public Layer getClipBounds() {
-        return null;
+    public Rectangle getClipBounds(Rectangle r) {
+        if (r == null) r = new Rectangle();
+        r.x = super.getClipX();
+        r.y = super.getClipY();
+        r.width = super.getClipWidth();
+        r.height = super.getClipHeight();
+        return r;
+    }
+
+
+    public Rectangle getClipBounds() {
+        Rectangle r = new Rectangle();
+        return getClipBounds(r);
     }
 
     public void setColor(Color color) {

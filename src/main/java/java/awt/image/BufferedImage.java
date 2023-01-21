@@ -1,10 +1,11 @@
 package java.awt.image;
 
-import org.mini.gui.GCallBack;
-import org.mini.gui.GCanvas;
+import org.mini.gui.GImage;
+import org.mini.gui.ImageMutable;
 
 import javax.imageio.WritableRenderedImage;
 import java.awt.*;
+import java.nio.ByteBuffer;
 
 public class BufferedImage extends java.awt.Image implements WritableRenderedImage {
     public static final int TYPE_CUSTOM = 0;
@@ -38,39 +39,39 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     private static final int DCM_BGR_BLU_MASK = 0xff0000;
 
 
-    GCanvas canvas;
-    Graphics2D graphics;
+    ImageMutable buffer;
+    Graphics2D graphics2D;
 
 
     public BufferedImage(int width,
                          int height,
                          int imageType) {
-        canvas = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, width, height);
+        buffer = GImage.createImageMutable(width, height);
     }
 
     public Graphics2D createGraphics() {
-        if (graphics == null) {
-            graphics = new Graphics2D(canvas, GCallBack.getInstance().getNvContext());
+        if (graphics2D == null) {
+            graphics2D = new BufferedImageGraphics(this);
         }
-        return graphics;
+        return graphics2D;
     }
 
     public int getWidth() {
-        return (int) canvas.getW();
+        return (int) buffer.getWidth();
     }
 
     public int getHeight() {
-        return (int) canvas.getH();
+        return (int) buffer.getHeight();
     }
 
     @Override
     public int getWidth(ImageObserver observer) {
-        return (int) canvas.getW();
+        return (int) buffer.getWidth();
     }
 
     @Override
     public int getHeight(ImageObserver observer) {
-        return (int) canvas.getH();
+        return (int) buffer.getHeight();
     }
 
     @Override
@@ -97,11 +98,11 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
         return null;
     }
 
-    public void setRGB(int i, int i1, int width, int height, int[] rgbData, int offset, int scanlength) {
-
+    public void setRGB(int startX, int startY, int w, int h, int[] rgbData, int offset, int scanlength) {
+        buffer.setPix(rgbData, 0, scanlength, 0, 0, w, h);
     }
 
-    public void setRGB(int i, int i1, int c) {
+    public void setRGB(int startX, int startY, int c) {
 
     }
 
@@ -111,5 +112,13 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
 
     public int getRGB(int i, int i1) {
         return 0xffffffff;
+    }
+
+    public ByteBuffer getData() {
+        return buffer.getData();
+    }
+
+    public ImageMutable getImage() {
+        return buffer;
     }
 }
