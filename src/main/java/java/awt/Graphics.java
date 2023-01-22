@@ -10,8 +10,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.ImageObserver;
 
 public class Graphics extends GGraphics {
-    Font font;
-    FontMetrics fontMetrics;
+    protected Font font;
+    protected FontMetrics fontMetrics;
 
     public Graphics(GObject master, long context) {
         super(master, context);

@@ -71,4 +71,8 @@ public class Font {
 
         return new Font(newAttrs, createdFont);
     }
+
+    public int getSize() {
+        return 12;
+    }
 }

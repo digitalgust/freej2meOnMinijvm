@@ -11,8 +11,7 @@ public class FontMetrics {
     }
 
     public int stringWidth(String str) {
-        float[] b = GToolkit.getTextBoundle(GCallBack.getInstance().getNvContext(), str, 1000f, font.size);
-        return (int) (b[2] - b[0]);
+        return (int) 12;
     }
 
     public int getAscent() {

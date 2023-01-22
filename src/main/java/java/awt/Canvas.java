@@ -13,20 +13,28 @@ public class Canvas extends Component {
         peer = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, 1, 1) {
             public boolean paint(long vg) {
                 if (bimg != null) {
+                    bimg.setRGB(bimg.getWidth() / 2, bimg.getHeight() / 2, 0xffffffff);
                     bimg.getImage().updateImage();
                     GToolkit.drawImage(vg, bimg.getImage(), getX(), getY(), getW(), getH(), false, 1.0f);
                 }
-                return true;
+                GToolkit.drawRect(vg, getX(), getY(), getW(), getH(), GToolkit.getStyle().getHighColor(), false);
+                return super.paint(vg);
             }
         };
     }
 
     @Override
+    public void setParent(Container parent) {
+        super.setParent(parent);
+        setSize(parent.getWidth(), parent.getHeight());
+        bimg = null;
+    }
+
+    @Override
     public void setSize(int w, int h) {
         super.setSize(w, h);
-        if (bimg != null) {
-            bimg = null;
-        }
+        peer.getParent().reAlign();
+        bimg = null;
     }
 
     @Override

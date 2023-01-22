@@ -14,7 +14,7 @@ public class Component implements ImageObserver, MenuContainer,
         Serializable {
     transient GObject peer;
     Graphics gGraphics;
-    Container parent;
+    private Container parent;
 
 
     public GObject getPeer() {
@@ -23,6 +23,10 @@ public class Component implements ImageObserver, MenuContainer,
 
     public Container getParent() {
         return parent;
+    }
+
+    public void setParent(Container parent) {
+        this.parent = parent;
     }
 
     public void setLocation(int x, int y) {

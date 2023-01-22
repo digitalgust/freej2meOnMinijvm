@@ -39,14 +39,17 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     private static final int DCM_BGR_BLU_MASK = 0xff0000;
 
 
-    ImageMutable buffer;
+    ImageMutable gimg;
     Graphics2D graphics2D;
 
 
     public BufferedImage(int width,
                          int height,
                          int imageType) {
-        buffer = GImage.createImageMutable(width, height);
+//        if (imageType != TYPE_INT_ARGB) {
+//            throw new RuntimeException("Not support BufferedImage type " + imageType);
+//        }
+        gimg = GImage.createImageMutable(width, height);
     }
 
     public Graphics2D createGraphics() {
@@ -57,21 +60,21 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     }
 
     public int getWidth() {
-        return (int) buffer.getWidth();
+        return (int) gimg.getWidth();
     }
 
     public int getHeight() {
-        return (int) buffer.getHeight();
+        return (int) gimg.getHeight();
     }
 
     @Override
     public int getWidth(ImageObserver observer) {
-        return (int) buffer.getWidth();
+        return (int) gimg.getWidth();
     }
 
     @Override
     public int getHeight(ImageObserver observer) {
-        return (int) buffer.getHeight();
+        return (int) gimg.getHeight();
     }
 
     @Override
@@ -86,7 +89,7 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
 
     @Override
     public Object getProperty(String name, ImageObserver observer) {
-        return null;
+        return "";
     }
 
     @Override
@@ -99,26 +102,26 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     }
 
     public void setRGB(int startX, int startY, int w, int h, int[] rgbData, int offset, int scanlength) {
-        buffer.setPix(rgbData, 0, scanlength, 0, 0, w, h);
+        gimg.setPix(rgbData, 0, scanlength, 0, 0, w, h);
     }
 
     public void setRGB(int startX, int startY, int c) {
-
+        gimg.setPix(startY, startX, c);
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {
         return pixels;
     }
 
-    public int getRGB(int i, int i1) {
-        return 0xffffffff;
+    public int getRGB(int x, int y) {
+        return gimg.getPix(y, x);
     }
 
     public ByteBuffer getData() {
-        return buffer.getData();
+        return gimg.getData();
     }
 
     public ImageMutable getImage() {
-        return buffer;
+        return gimg;
     }
 }

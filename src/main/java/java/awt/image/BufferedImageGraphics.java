@@ -1,12 +1,19 @@
 package java.awt.image;
 
 import org.mini.gui.GObject;
+import org.mini.reflect.ReflectArray;
+import org.mini.reflect.vm.RefNative;
 
 import java.awt.*;
 
-public class BufferedImageGraphics extends Graphics2D {
+class BufferedImageGraphics extends Graphics2D {
+    static final int CELL_BYTES = 4;
 
     BufferedImage img;
+    long imgArrAddr;
+    byte[] int2byte = {0, 0, 0, 0};
+    long byteAddr;
+    int imgW, imgH;
 
     public BufferedImageGraphics(GObject master, long context) {
         super(master, context);
@@ -15,38 +22,32 @@ public class BufferedImageGraphics extends Graphics2D {
     public BufferedImageGraphics(BufferedImage img) {
         super(null, 0);
         this.img = img;
+        imgArrAddr = ReflectArray.getBodyPtr(img.getData().array());
+        byteAddr = ReflectArray.getBodyPtr(int2byte);
+        imgW = img.getWidth();
+        imgH = img.getHeight();
     }
 
-
-    public void setColor(int pr, int pg, int pb) {
-        r = (byte) (pr & 0xff);
-        g = (byte) (pg & 0xff);
-        b = (byte) (pb & 0xff);
-        curColor = (curColor & 0xff000000) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
-    }
-
-    public void setColor(int argb) {
-        curColor = argb;
-        a = (byte) (0xff);
-        r = (byte) (0xff & (argb >> 16));
-        g = (byte) (0xff & (argb >> 8));
-        b = (byte) (0xff & (argb >> 0));
-    }
-
-    public void setAlpha(int b) {
-        curColor = (curColor & 0x00ffffff) | ((b & 0xff) << 24);
-    }
-
-    public void setARGBColor(int argb) {
-        curColor = argb;
-        a = (byte) (0xff & (argb >> 24));
-        r = (byte) (0xff & (argb >> 16));
-        g = (byte) (0xff & (argb >> 8));
-        b = (byte) (0xff & (argb >> 0));
-    }
 
     public void fillRect(int x, int y, int w, int h) {
+        if (x + w < 0 || y + h < 0 || x >= w || h >= h) {
+            return;
+        }
+        if (x + w > imgW) {
+            w = imgW - x;
+        }
+        if (y + h > imgH) {
+            h = imgH - y;
+        }
 
+        int2byte[0] = b;
+        int2byte[1] = g;
+        int2byte[2] = r;
+        int2byte[3] = a;
+
+        for (int i = y; i < y + h; i++) {
+            RefNative.heap_fill(imgArrAddr + (i * w + x) * CELL_BYTES, w * CELL_BYTES, byteAddr, CELL_BYTES);
+        }
     }
 
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -62,10 +63,45 @@ public class BufferedImageGraphics extends Graphics2D {
     }
 
     public void drawLine(int x1, int y1, int x2, int y2) {
+        if (x1 < 0) x1 = 0;
+        if (x1 > imgW) x1 = imgW;
+        if (x2 < 0) x2 = 0;
+        if (x2 > imgW) x2 = imgW;
+        if (y1 < 0) y1 = 0;
+        if (y1 > imgH) y1 = imgW;
+        if (y2 < 0) y2 = 0;
+        if (y2 > imgH) y2 = imgW;
 
+        if (y1 > y2) {
+            int i = y2;
+            y2 = y1;
+            y1 = i;
+        }
+        if (x1 > x2) {
+            int i = x2;
+            x2 = x1;
+            x1 = i;
+        }
+        int dy = y2 - y1;
+        int dx = x2 - x1;
+        if (dx > dy) {
+            for (int i = x1; i < x2; i++) {
+                int ty = (y2 - y1) * i / (x2 - x1);
+                img.getImage().setPix(i, ty, curColor);
+            }
+        } else {
+            for (int i = y1; i < y2; i++) {
+                int tx = (x2 - x1) * i / (y2 - y1);
+                img.getImage().setPix(tx, i, curColor);
+            }
+        }
     }
 
-    public void drawRect(int x1, int y1, int w1, int h1) {
+    public void drawRect(int x, int y, int w, int h) {
+        drawLine(x, y, x + w, y);
+        drawLine(x, y + h, x + w, y + h);
+        drawLine(x, y, x, y + h);
+        drawLine(x + w, y, x + w, y + h);
     }
 
     public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -74,18 +110,43 @@ public class BufferedImageGraphics extends Graphics2D {
 
 
     public void drawString(String str, int x, int y, int anchor) {
+        if (str == null) return;
+        drawSubstring(str, 0, str.length(), x, y, anchor);
     }
 
-    public void drawSubstring(String str, int offset, int len, int x, int y, int anchor) {
+    public void drawSubstring(String str, int offset, int length, int x, int y, int anchor) {
+        if (str == null) return;
+        if (offset < 0) offset = 0;
+        int end = offset + length;
+        if (end > str.length()) end = str.length();
+
+        int size = font.getSize();
+        for (int i = offset; i < end; i++) {
+            drawChar(str.charAt(i), x + size * i, y, anchor);
+        }
     }
 
     public void drawChar(char character, int x, int y, int anchor) {
+        int size = font.getSize();
+        drawRect(x, y, size, size);
     }
 
     public void drawChars(char[] data, int offset, int length, int x, int y, int anchor) {
+        if (data == null) return;
+        if (offset < 0) offset = 0;
+        int end = offset + length;
+        if (end > data.length) end = data.length;
+
+        int size = font.getSize();
+        for (int i = offset; i < end; i++) {
+            drawChar(data[i], x + size * i, y, anchor);
+        }
     }
 
     public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
+        drawLine(x1, y1, x2, y2);
+        drawLine(x1, y1, x3, y3);
+        drawLine(x2, y2, x3, y3);
     }
 
     public void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {

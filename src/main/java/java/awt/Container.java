@@ -3,7 +3,11 @@ package java.awt;
 
 import org.mini.gui.GContainer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Container extends Component {
+    List<Component> children = new ArrayList<>();
 
     public Insets getInsets() {
         return insets();
@@ -15,20 +19,20 @@ public class Container extends Component {
 
 
     public Component add(Component comp) {
-        ((GContainer) peer).add(comp.peer);
-        comp.parent = this;
-        comp.setSize(getWidth(), getHeight());
-        return comp;
+        return add(comp, 0);
     }
 
     public Component add(String name, Component comp) {
-        ((GContainer) peer).add(comp.peer);
+
         comp.peer.setName(name);
-        return comp;
+        return add(comp, 0);
     }
 
     public Component add(Component comp, int index) {
+        if (comp == null) return null;
+        if (!children.contains(comp)) children.add(comp);
         ((GContainer) peer).add(index, comp.peer);
+        comp.setParent(this);
         return comp;
     }
 }
