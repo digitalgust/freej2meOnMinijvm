@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 
 public class Canvas extends Component {
     BufferedImage bimg;
-    Graphics graphics;
 
     public Canvas() {
         peer = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, 1, 1) {

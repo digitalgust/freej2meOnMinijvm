@@ -2,12 +2,9 @@ package java.awt;
 
 
 import org.mini.gui.GContainer;
-import org.mini.gui.GFrame;
-import org.mini.gui.GObject;
 import org.mini.gui.GToolkit;
 
 import java.awt.event.WindowListener;
-import java.util.List;
 
 public class Window extends Container {
     transient WindowListener windowListener;
@@ -30,9 +27,11 @@ public class Window extends Container {
             go.setSize(w, h);
         }
         dispathComponentEvent();
+        peer.setLocation((peer.getForm().getW() - peer.getW()) * .5f, (peer.getForm().getH() - peer.getH()) * .5f);
+        int debug = 1;
     }
 
     public void pack() {
-
+        peer.setLocation((peer.getForm().getW() - peer.getW()) * .5f, (peer.getForm().getH() - peer.getH()) * .5f);
     }
 }

@@ -2,10 +2,7 @@ package com.ebsee.emu;
 
 import org.mini.apploader.GApplication;
 import org.mini.glfm.Glfm;
-import org.mini.gui.GCallBack;
-import org.mini.gui.GForm;
-import org.mini.gui.GFrame;
-import org.mini.gui.GToolkit;
+import org.mini.gui.*;
 import org.recompile.freej2me.FreeJ2ME;
 
 import java.io.File;
@@ -15,7 +12,7 @@ public class J2meEmu extends GApplication {
 
 
     static J2meEmu mainApp;
-    GForm gform;
+    EmuForm gform;
     Thread thread;
 
     public static J2meEmu getInstance() {
@@ -31,7 +28,8 @@ public class J2meEmu extends GApplication {
         if (gform == null) {
             Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationLandscapeLeft);
             Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
-            gform = new GForm(null);
+            gform = new EmuForm(null, this);
+            gform.addButtons();
 
             GFrame chooser = GToolkit.getFileChooser(gform, "Select a j2me midlet jar", null, new FileFilter() {
                 @Override
@@ -45,6 +43,11 @@ public class J2meEmu extends GApplication {
                 main(args);
             }, null);
             gform.add(chooser);
+            GButton exitbut = new GButton(gform, GLanguage.getString("Exit"), 20, 0, 60f, 25f);
+            gform.add(exitbut);
+            exitbut.setActionListener(gObject -> {
+                closeApp();
+            });
         }
         return gform;
     }
