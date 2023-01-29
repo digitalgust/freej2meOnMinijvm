@@ -38,8 +38,31 @@ public class ImageIO {
         int[] whd = {0, 0, 0};
         byte[] b = GLUtil.image_parse_from_file_content(k, whd);
 
+        int bitdepth = whd[2];
         BufferedImage img = new BufferedImage(whd[0], whd[1], BufferedImage.TYPE_INT_ARGB);
-        img.getData().put(b);
+        if (bitdepth == 4) {//argb
+            img.getData().put(b);
+        } else if (bitdepth == 3) {//rgb
+            for (int i = 0; i < b.length; i += 3) {
+                img.getData().put(b[i + 0]);
+                img.getData().put(b[i + 1]);
+                img.getData().put(b[i + 2]);
+                img.getData().put((byte) 0xff);//insert alpha
+            }
+        } else if (bitdepth == 1) {//gray
+            for (int i = 0; i < b.length; i++) {
+                if (b[i] != 0) {
+                    img.getData().put(i * 4 + 0, (byte) 0xff);//
+                    img.getData().put(i * 4 + 1, (byte) 0xff);//
+                    img.getData().put(i * 4 + 2, (byte) 0xff);//
+                    img.getData().put(i * 4 + 3, (byte) 0xff);//insert alpha
+                } else {
+                    img.getData().put(i * 4 + 3, (byte) 0x00);
+                }
+            }
+        } else {
+            throw new RuntimeException("unknow image type");
+        }
 
         return img;
     }

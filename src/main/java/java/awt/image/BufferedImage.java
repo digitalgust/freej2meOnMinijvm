@@ -1,5 +1,6 @@
 package java.awt.image;
 
+import org.mini.gl.GLMath;
 import org.mini.gui.GImage;
 import org.mini.gui.ImageMutable;
 
@@ -7,6 +8,12 @@ import javax.imageio.WritableRenderedImage;
 import java.awt.*;
 import java.nio.ByteBuffer;
 
+
+/**
+ * BufferedImage bytes array dependence ImageMutable
+ * <p>
+ * ImageMutable is ABGR format
+ */
 public class BufferedImage extends java.awt.Image implements WritableRenderedImage {
     public static final int TYPE_CUSTOM = 0;
     public static final int TYPE_INT_RGB = 1;
@@ -41,6 +48,7 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
 
     ImageMutable gimg;
     Graphics2D graphics2D;
+    int imageType;
 
 
     public BufferedImage(int width,
@@ -49,6 +57,7 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
 //        if (imageType != TYPE_INT_ARGB) {
 //            throw new RuntimeException("Not support BufferedImage type " + imageType);
 //        }
+        this.imageType = imageType;
         gimg = GImage.createImageMutable(width, height);
     }
 
@@ -98,15 +107,29 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     }
 
     public BufferedImage getSubimage(int x, int y, int width, int height) {
+        if (x == 0 && y == 0 && width == getWidth() && height == getHeight()) {
+            return this;
+        }
+        BufferedImage nimg = new BufferedImage(width, height, TYPE_INT_ARGB);
+        Graphics g2d = nimg.getGraphics();
+        g2d.drawImage(this, -x, -y, null);
         return null;
     }
 
-    public void setRGB(int startX, int startY, int w, int h, int[] rgbData, int offset, int scanlength) {
-        gimg.setPix(rgbData, 0, scanlength, 0, 0, w, h);
+    public void setRGB(int startX, int startY, int w, int h, int[] rgbArray, int offset, int scanlength) {
+
+        int imgW = gimg.getWidth();
+        for (int y = startY, ymax = startY + h; y < ymax; y++) {
+            for (int x = startX, xmax = startX + w; x < xmax; x++) {
+                int pixel = rgbArray[offset + (y - startY) * scanlength + (x - startX)];
+                pixel = (0xff << 24) | pixel;
+                GLMath.img_fill(getData().array(), y * imgW + x, 1, pixel);
+            }
+        }
     }
 
     public void setRGB(int startX, int startY, int c) {
-        gimg.setPix(startY, startX, c);
+        gimg.setPix(startY, startX, c | (0xff << 24));
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {

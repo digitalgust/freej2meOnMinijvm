@@ -1,36 +1,40 @@
 package java.awt.image;
 
+import org.mini.gl.GLMath;
 import org.mini.gui.GObject;
-import org.mini.reflect.ReflectArray;
-import org.mini.reflect.vm.RefNative;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 
 class BufferedImageGraphics extends Graphics2D {
     static final int CELL_BYTES = 4;
 
-    BufferedImage img;
-    long imgArrAddr;
-    byte[] int2byte = {0, 0, 0, 0};
-    long byteAddr;
+    //draw image
+    BufferedImage bimg;
+    byte[] bimgArr;
     int imgW, imgH;
+
+    //draw string
+    final static int FONT_MAX_DOT = 72;
+    byte[] charBitmap = new byte[FONT_MAX_DOT * FONT_MAX_DOT];
+    int[] widthAndHeight = {0, 0};
 
     public BufferedImageGraphics(GObject master, long context) {
         super(master, context);
     }
 
-    public BufferedImageGraphics(BufferedImage img) {
+    public BufferedImageGraphics(BufferedImage bimg) {
         super(null, 0);
-        this.img = img;
-        imgArrAddr = ReflectArray.getBodyPtr(img.getData().array());
-        byteAddr = ReflectArray.getBodyPtr(int2byte);
-        imgW = img.getWidth();
-        imgH = img.getHeight();
+        this.bimg = bimg;
+        bimgArr = bimg.getData().array();
+        imgW = bimg.getWidth();
+        imgH = bimg.getHeight();
+        setClip(0, 0, imgW, imgH);
     }
 
 
     public void fillRect(int x, int y, int w, int h) {
-        if (x + w < 0 || y + h < 0 || x >= w || h >= h) {
+        if (x + w < 0 || y + h < 0 || x > imgW || h > imgH) {
             return;
         }
         if (x + w > imgW) {
@@ -40,13 +44,8 @@ class BufferedImageGraphics extends Graphics2D {
             h = imgH - y;
         }
 
-        int2byte[0] = b;
-        int2byte[1] = g;
-        int2byte[2] = r;
-        int2byte[3] = a;
-
         for (int i = y; i < y + h; i++) {
-            RefNative.heap_fill(imgArrAddr + (i * w + x) * CELL_BYTES, w * CELL_BYTES, byteAddr, CELL_BYTES);
+            GLMath.img_fill(bimgArr, x + i * imgW, w, curColor);
         }
     }
 
@@ -86,13 +85,13 @@ class BufferedImageGraphics extends Graphics2D {
         int dx = x2 - x1;
         if (dx > dy) {
             for (int i = x1; i < x2; i++) {
-                int ty = (y2 - y1) * i / (x2 - x1);
-                img.getImage().setPix(i, ty, curColor);
+                int ty = y1 + (y2 - y1) * i / (x2 - x1);
+                GLMath.img_fill(bimgArr, ty * imgW + i, 1, curColor);
             }
         } else {
             for (int i = y1; i < y2; i++) {
-                int tx = (x2 - x1) * i / (y2 - y1);
-                img.getImage().setPix(tx, i, curColor);
+                int tx = x1 + (x2 - x1) * i / (y2 - y1);
+                GLMath.img_fill(bimgArr, i * imgW + tx, 1, curColor);
             }
         }
     }
@@ -120,15 +119,52 @@ class BufferedImageGraphics extends Graphics2D {
         int end = offset + length;
         if (end > str.length()) end = str.length();
 
-        int size = font.getSize();
+        int w = font.getBitmapfont().stringWidth(str);
+        int h = font.getBitmapfont().getHeight();
+
+        if ((anchor & TOP) != 0) {
+        } else if ((anchor & VCENTER) != 0) {
+            y -= h / 2;
+        } else if ((anchor & BASELINE) != 0) {
+            y -= h * 0.8f;
+        } else {//bottom
+            y -= h;
+        }
+
+        if ((anchor & LEFT) != 0) {
+        } else if ((anchor & HCENTER) != 0) {
+            x -= w / 2;
+        } else {//RIGHT
+            x -= w;
+        }
+
+
+        int pos = 0;
         for (int i = offset; i < end; i++) {
-            drawChar(str.charAt(i), x + size * i, y, anchor);
+            pos += font.getBitmapfont().drawChar(bimg, str.charAt(i), x + pos, y, curColor);
         }
     }
 
-    public void drawChar(char character, int x, int y, int anchor) {
-        int size = font.getSize();
-        drawRect(x, y, size, size);
+    public synchronized void drawChar(char character, int x, int y, int anchor) {
+        int w = font.getBitmapfont().charWidth(character);
+        int h = font.getBitmapfont().getHeight();
+
+        if ((anchor & TOP) != 0) {
+        } else if ((anchor & VCENTER) != 0) {
+            y -= h / 2;
+        } else if ((anchor & BASELINE) != 0) {
+            y -= h * 0.8f;
+        } else {//bottom
+            y -= h;
+        }
+
+        if ((anchor & LEFT) != 0) {
+        } else if ((anchor & HCENTER) != 0) {
+            x -= w / 2;
+        } else {//RIGHT
+            x -= w;
+        }
+        font.getBitmapfont().drawChar(bimg, character, x, y, curColor);
     }
 
     public void drawChars(char[] data, int offset, int length, int x, int y, int anchor) {
@@ -137,9 +173,29 @@ class BufferedImageGraphics extends Graphics2D {
         int end = offset + length;
         if (end > data.length) end = data.length;
 
-        int size = font.getSize();
+        int w = font.getBitmapfont().charsWidth(data);
+        int h = font.getBitmapfont().getHeight();
+
+        if ((anchor & TOP) != 0) {
+        } else if ((anchor & VCENTER) != 0) {
+            y -= h / 2;
+        } else if ((anchor & BASELINE) != 0) {
+            y -= h * 0.8f;
+        } else {//bottom
+            y -= h;
+        }
+
+        if ((anchor & LEFT) != 0) {
+        } else if ((anchor & HCENTER) != 0) {
+            x -= w / 2;
+        } else {//RIGHT
+            x -= w;
+        }
+
+
+        int pos = 0;
         for (int i = offset; i < end; i++) {
-            drawChar(data[i], x + size * i, y, anchor);
+            pos += font.getBitmapfont().drawChar(bimg, data[i], x + pos, y, curColor);
         }
     }
 
@@ -381,4 +437,55 @@ class BufferedImageGraphics extends Graphics2D {
     public void setGrayScale(int value) {
 
     }
+
+    @Override
+    public boolean drawImage(Image img, AffineTransform transform,
+                             ImageObserver observer) {
+        if (img instanceof BufferedImage) {
+            BufferedImage cimg = ((BufferedImage) img);
+            int srcW = cimg.getWidth();
+            byte[] dst = bimg.getData().array();
+            byte[] src = cimg.getData().array();
+
+            GLMath.img_draw(dst, imgW,
+                    src, srcW,
+                    clipX, clipY, clipW, clipH,
+                    (float) transform.getScaleX(),
+                    (float) transform.getShearX(),
+                    (float) transform.getTranslateX(),
+                    (float) transform.getShearY(),
+                    (float) transform.getScaleY(),
+                    (float) transform.getTranslateY(),
+                    1.0f,
+                    false, 0);
+        } else {
+            int debug = 1;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y,
+                             ImageObserver observer) {
+        if (img instanceof BufferedImage) {
+            AffineTransform af = new AffineTransform();
+            af.translate(x, y);
+            drawImage(img, af, observer);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y, int width, int height,
+                             ImageObserver observer) {
+        if (img instanceof BufferedImage) {
+            BufferedImage cimg = ((BufferedImage) img);
+            AffineTransform af = new AffineTransform();
+            af.translate(x, y);
+            af.scale((double) width / cimg.getWidth(), (double) height / cimg.getHeight());
+            drawImage(img, af, observer);
+        }
+        return true;
+    }
+
 }

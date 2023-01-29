@@ -3,18 +3,22 @@ package java.awt;
 import org.mini.gui.GCallBack;
 import org.mini.gui.GObject;
 
+import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.EventListener;
 
 public class Component implements ImageObserver, MenuContainer,
         Serializable {
     transient GObject peer;
     Graphics gGraphics;
     private Container parent;
+    java.util.List<ComponentListener> compListeners = new ArrayList<>();
 
 
     public GObject getPeer() {
@@ -35,6 +39,14 @@ public class Component implements ImageObserver, MenuContainer,
 
     public void setSize(int width, int height) {
         peer.setSize(width, height);
+        dispathComponentEvent();
+    }
+
+    protected void dispathComponentEvent() {
+        for (int i = 0; i < compListeners.size(); i++) {
+            ComponentListener l = compListeners.get(i);
+            l.componentResized(new ComponentEvent(this, ComponentEvent.COMPONENT_RESIZED));
+        }
     }
 
     public void move(int x, int y) {
@@ -105,15 +117,13 @@ public class Component implements ImageObserver, MenuContainer,
     }
 
     public synchronized void addKeyListener(KeyListener l) {
-
     }
 
     public synchronized void addMouseListener(MouseListener l) {
-
     }
 
     public synchronized void addComponentListener(ComponentListener l) {
-
+        compListeners.add(l);
     }
 
     public void setVisible(boolean b) {

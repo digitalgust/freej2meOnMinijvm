@@ -24,11 +24,12 @@ public class Window extends Container {
     @Override
     public void setSize(int w, int h) {
         GContainer con = (GContainer) peer;
-        con.setSize(w + 4, h + GFrame.TITLE_HEIGHT + GFrame.PAD * 2);
+        con.setSize(w, h);
         for (int i = 0; i < children.size(); i++) {
             Component go = children.get(i);
             go.setSize(w, h);
         }
+        dispathComponentEvent();
     }
 
     public void pack() {

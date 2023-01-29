@@ -1,5 +1,7 @@
 package java.awt;
 
+import java.awt.image.BitmapFont;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -37,6 +39,8 @@ public class Font {
     private Hashtable fRequestedAttributes;
 
     boolean createdFont = true;
+    BitmapFont bitmapfont;
+    static Map<String, BitmapFont> fonts = new HashMap<>();
 
 
     public Font(String name, int style, int size) {
@@ -44,6 +48,12 @@ public class Font {
         this.style = (style & ~0x03) == 0 ? style : 0;
         this.size = size;
         this.pointSize = size;
+        bitmapfont = fonts.get(name);
+        if (bitmapfont == null) {
+            bitmapfont = new BitmapFont("/12txt.fnt");
+            fonts.put(name, bitmapfont);
+        }
+        if (bitmapfont == null) throw new RuntimeException("Create font error " + name);
     }
 
     private Font(Map attributes, boolean created) {
@@ -73,6 +83,10 @@ public class Font {
     }
 
     public int getSize() {
-        return 12;
+        return size;
+    }
+
+    public BitmapFont getBitmapfont() {
+        return bitmapfont;
     }
 }

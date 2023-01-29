@@ -1,8 +1,5 @@
 package java.awt;
 
-import org.mini.gui.GCallBack;
-import org.mini.gui.GToolkit;
-
 public class FontMetrics {
     Font font;
 
@@ -11,7 +8,7 @@ public class FontMetrics {
     }
 
     public int stringWidth(String str) {
-        return (int) 12;
+        return (int) font.bitmapfont.stringWidth(str);
     }
 
     public int getAscent() {
@@ -19,6 +16,6 @@ public class FontMetrics {
     }
 
     public int getHeight() {
-        return 0;
+        return 12;
     }
 }
