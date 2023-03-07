@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="J2meOnMinijvm" />
+        <module name="freej2meOnMinijvm" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="J2meOnMinijvm" target="1.8" />
+      <module name="freej2meOnMinijvm" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
