@@ -31,18 +31,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.minijvm</groupId>
+            <groupId>io.github.digitalgust</groupId>
             <artifactId>minijvm_rt</artifactId>
             <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/binary/lib/minijvm_rt.jar</systemPath>
         </dependency>
+
         <dependency>
-            <groupId>org.minijvm</groupId>
+            <groupId>io.github.digitalgust</groupId>
             <artifactId>glfm_gui</artifactId>
             <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/binary/libex/glfw_gui.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.recompile</groupId>
