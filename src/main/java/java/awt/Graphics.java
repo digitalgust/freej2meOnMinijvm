@@ -52,7 +52,7 @@ public class Graphics extends GGraphics {
 
 
     public void drawString(String str, int x, int y) {
-        drawString(str, x, y, GGraphics.LEFT | GGraphics.TOP);
+        drawString(str, x, y, GGraphics.LEFT | GGraphics.BASELINE);
     }
 
     public Rectangle getClipBounds(Rectangle r) {

@@ -8,7 +8,7 @@ public class Canvas extends Component {
     BufferedImage bimg;
 
     public Canvas() {
-        peer = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, 1, 1) {
+        GObject peer = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, 1, 1) {
             public boolean paint(long vg) {
                 if (bimg != null) {
                     //bimg.setRGB(bimg.getWidth() / 2, bimg.getHeight() / 2, 0xffffffff);
@@ -20,6 +20,7 @@ public class Canvas extends Component {
                 return super.paint(vg);
             }
         };
+        setPeer(peer);
     }
 
     @Override
@@ -34,13 +35,13 @@ public class Canvas extends Component {
     @Override
     public void setSize(int w, int h) {
         super.setSize(w, h);
-        peer.getParent().reAlign();
+        getPeer().getParent().reAlign();
     }
 
     @Override
     public Graphics getGraphics() {
         if (bimg == null) {
-            bimg = new BufferedImage((int) peer.getW(), (int) peer.getH(), BufferedImage.TYPE_INT_ARGB);
+            bimg = new BufferedImage((int) getPeer().getW(), (int) getPeer().getH(), BufferedImage.TYPE_INT_ARGB);
         }
         return bimg.getGraphics();
     }

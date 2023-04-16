@@ -3,26 +3,30 @@ package java.awt;
 import org.mini.gui.GCallBack;
 import org.mini.gui.GObject;
 
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.List;
 
 public class Component implements ImageObserver, MenuContainer,
         Serializable {
-    transient GObject peer;
+    private transient GObject peer;
     Graphics gGraphics;
     private Container parent;
     java.util.List<ComponentListener> compListeners = new ArrayList<>();
+    java.util.List<KeyListener> keyListeners = new ArrayList<>();
 
 
     public GObject getPeer() {
         return peer;
+    }
+
+    public void setPeer(GObject peer) {
+        this.peer = peer;
+        this.peer.setAttachment(this);
     }
 
     public Container getParent() {
@@ -116,10 +120,21 @@ public class Component implements ImageObserver, MenuContainer,
 
     }
 
+    public List<KeyListener> getKeyListeners() {
+        return keyListeners;
+    }
+
     public synchronized void addKeyListener(KeyListener l) {
+        keyListeners.add(l);
+
     }
 
     public synchronized void addMouseListener(MouseListener l) {
+    }
+
+
+    public synchronized void addMouseMotionListener(MouseMotionListener l) {
+
     }
 
     public synchronized void addComponentListener(ComponentListener l) {

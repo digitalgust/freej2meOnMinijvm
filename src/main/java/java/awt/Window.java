@@ -14,14 +14,14 @@ public class Window extends Container {
     }
 
     public void setVisible(boolean b) {
-        this.peer.setVisible(b);
-        GToolkit.showFrame(this.peer);
+        this.getPeer().setVisible(b);
+        GToolkit.showFrame(this.getPeer());
     }
 
     @Override
     public void setSize(int w, int h) {
-        GContainer con = (GContainer) peer;
-        con.setSize(w, h);
+        GContainer peer = (GContainer) getPeer();
+        peer.setSize(w, h);
         for (int i = 0; i < children.size(); i++) {
             Component go = children.get(i);
             go.setSize(w, h);
@@ -32,6 +32,6 @@ public class Window extends Container {
     }
 
     public void pack() {
-        peer.setLocation((peer.getForm().getW() - peer.getW()) * .5f, (peer.getForm().getH() - peer.getH()) * .5f);
+        getPeer().setLocation((getPeer().getForm().getW() - getPeer().getW()) * .5f, (getPeer().getForm().getH() - getPeer().getH()) * .5f);
     }
 }

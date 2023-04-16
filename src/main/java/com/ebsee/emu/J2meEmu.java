@@ -31,23 +31,25 @@ public class J2meEmu extends GApplication {
             gform = new EmuForm(null, this);
             gform.addButtons();
 
-            GFrame chooser = GToolkit.getFileChooser(gform, "Select a j2me midlet jar", null, new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return file.getName().endsWith(".jar") || file.isDirectory();
-                }
-            }, gform.getDeviceWidth(), gform.getDeviceHeight(), (gobj) -> {
-                String[] args = new String[1];
-                File f = gobj.getAttachment();
-                args[0] = "file:" + f.getAbsolutePath();
-                main(args);
-            }, null);
+            GFrame chooser = GToolkit.getFileChooser(gform, "Select a j2me midlet jar", null,
+                    new FileFilter() {
+                        @Override
+                        public boolean accept(File file) {
+                            return file.getName().endsWith(".jar") || file.isDirectory();
+                        }
+                    },
+                    gform.getDeviceWidth(), gform.getDeviceHeight(),
+                    (gobj) -> {
+                        String[] args = new String[1];
+                        File f = gobj.getAttachment();
+                        args[0] = "file:" + f.getAbsolutePath();
+                        main(args);
+                    },
+                    gobj -> {
+                        closeApp();
+                    });
             gform.add(chooser);
-            GButton exitbut = new GButton(gform, GLanguage.getString("Exit"), 20, 0, 60f, 25f);
-            gform.add(exitbut);
-            exitbut.setActionListener(gObject -> {
-                closeApp();
-            });
+
         }
         return gform;
     }

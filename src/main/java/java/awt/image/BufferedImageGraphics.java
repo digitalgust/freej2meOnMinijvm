@@ -50,7 +50,7 @@ class BufferedImageGraphics extends Graphics2D {
     }
 
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-
+        fillRect(x, y, width, height);
     }
 
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
@@ -104,7 +104,7 @@ class BufferedImageGraphics extends Graphics2D {
     }
 
     public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-
+        drawRect(x, y, width, height);
     }
 
 
@@ -126,7 +126,7 @@ class BufferedImageGraphics extends Graphics2D {
         } else if ((anchor & VCENTER) != 0) {
             y -= h / 2;
         } else if ((anchor & BASELINE) != 0) {
-            y -= h * 0.8f;
+            y -= h;
         } else {//bottom
             y -= h;
         }
@@ -153,7 +153,7 @@ class BufferedImageGraphics extends Graphics2D {
         } else if ((anchor & VCENTER) != 0) {
             y -= h / 2;
         } else if ((anchor & BASELINE) != 0) {
-            y -= h * 0.8f;
+            y -= h;
         } else {//bottom
             y -= h;
         }
@@ -180,7 +180,7 @@ class BufferedImageGraphics extends Graphics2D {
         } else if ((anchor & VCENTER) != 0) {
             y -= h / 2;
         } else if ((anchor & BASELINE) != 0) {
-            y -= h * 0.8f;
+            y -= h;
         } else {//bottom
             y -= h;
         }

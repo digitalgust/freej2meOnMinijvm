@@ -109,6 +109,15 @@ public class BitmapFont {
 
         short[] chinfo = findCharInfo(ch);
         if (chinfo != null) {
+            y += 4;//fix freej2me draw error
+
+//    static public native int img_draw(byte[] imgCanvas, int canvasWidth,
+//                                      byte[] img, int imgWidth,
+//                                      int clipX, int clipY, int clipW, int clipH,
+//                                      float transformM00, float transformM01, float transformM02, float transformM10, float transformM11, float transformM12,
+//                                      float alpha,
+//                                      boolean bitmapFont, int fontRGB);
+
             GLMath.img_draw(canvas.getData().array(), canvas.getWidth(),
                     fontShap.getData().array(), fontShap.getWidth(),
                     x + chinfo[ARR_XOFFSET], y + chinfo[ARR_YOFFSET], chinfo[ARR_W], chinfo[ARR_H],

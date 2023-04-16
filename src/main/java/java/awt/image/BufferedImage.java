@@ -3,10 +3,13 @@ package java.awt.image;
 import org.mini.gl.GLMath;
 import org.mini.gui.GImage;
 import org.mini.gui.ImageMutable;
+import org.mini.reflect.ReflectArray;
+import org.mini.reflect.vm.RefNative;
 
 import javax.imageio.WritableRenderedImage;
 import java.awt.*;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 
 /**
@@ -49,6 +52,8 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     ImageMutable gimg;
     Graphics2D graphics2D;
     int imageType;
+
+    static final byte BYTE_PER_PIXEL = 4;
 
 
     public BufferedImage(int width,
@@ -126,6 +131,38 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
                 GLMath.img_fill(getData().array(), y * imgW + x, 1, pixel);
             }
         }
+
+//        if (w <= 0 || h <= 0) return;
+//        if (startX < 0) startX = 0;
+//        if (startY < 0) startY = 0;
+//
+//        long canvasAddr = ReflectArray.getBodyPtr(gimg.getData().array());
+//        int imgW = gimg.getWidth();
+//        int imgH = gimg.getHeight();
+//
+//        long rgbAddr = ReflectArray.getBodyPtr(rgbArray);
+//        int rgbY = offset / scanlength;
+//        int rgbX = offset % scanlength;
+//        int rgbW = scanlength;
+//        int rgbH = rgbArray.length / scanlength;
+//
+//        if (startX + w > imgW) {
+//            w = imgW - startX;
+//        }
+//        if (rgbX + w > rgbW) {
+//            w = rgbW - rgbX;
+//        }
+//        if (startY + h > imgH) {
+//            h = imgH - startY;
+//        }
+//        if (rgbY + h > rgbH) {
+//            h = rgbH - rgbY;
+//        }
+//
+//        for (int y = startY, ymax = startY + h; y < ymax; y++) {
+//            RefNative.heap_copy(rgbAddr, (y * rgbW + rgbX) * BYTE_PER_PIXEL,
+//                    canvasAddr, (y * imgW + startX) * BYTE_PER_PIXEL, w * BYTE_PER_PIXEL);
+//        }
     }
 
     public void setRGB(int startX, int startY, int c) {
@@ -133,6 +170,17 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {
+        int tgtY = offset / scanlength;
+        int tgtX = offset % scanlength;
+        int tgtW = scanlength;
+        int tgtH = pixels.length / scanlength;
+        for (int j = y; j < height && j < gimg.getHeight() && tgtY < tgtH; j++, tgtY++) {
+            int dx = tgtX;
+            int tgtRowStart = tgtY * scanlength;
+            for (int i = x; i < width && i < gimg.getWidth() && dx < tgtW; i++, dx++) {
+                pixels[tgtRowStart + dx] = gimg.getPix(j, i);
+            }
+        }
         return pixels;
     }
 

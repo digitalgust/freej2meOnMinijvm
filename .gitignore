@@ -1,5 +1,5 @@
 .DS_Store
-.idea
+.idea/*
 
 Thumbs.db
 /build
@@ -10,5 +10,5 @@ dist
 cmake-build-debug
 cmake-build-release
 
-
+.idea
 .svn

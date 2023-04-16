@@ -17,26 +17,19 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Maven: org.minijvm:minijvm_rt:1.0">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../miniJVM/binary/lib/minijvm_rt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Maven: org.minijvm:glfm_gui:1.0">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../miniJVM/binary/libex/glfw_gui.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../tools/j2meemu/S60.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="Maven: io.github.digitalgust:minijvm_rt:1.0" level="project" />
+    <orderEntry type="library" name="Maven: io.github.digitalgust:glfm_gui:1.0.1" level="project" />
     <orderEntry type="module-library">
       <library name="Maven: org.recompile:freej2me:1.0">
         <CLASSES>
