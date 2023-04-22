@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Container extends Component {
+
+    LayoutManager layoutMgr;
     List<Component> children = new ArrayList<>();
 
     public Insets getInsets() {
@@ -37,5 +39,9 @@ public class Container extends Component {
         ((GContainer) getPeer()).add(index, comp.getPeer());
         comp.setParent(this);
         return comp;
+    }
+
+    public void setLayout(LayoutManager mgr) {
+        layoutMgr = mgr;
     }
 }

@@ -2,6 +2,7 @@ package java.awt;
 
 import org.mini.gui.GCallBack;
 import org.mini.gui.GObject;
+import sun.misc.GC;
 
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -44,6 +45,17 @@ public class Component implements ImageObserver, MenuContainer,
     public void setSize(int width, int height) {
         peer.setSize(width, height);
         dispathComponentEvent();
+    }
+
+    public void setPreferredSize(Dimension preferredSize) {
+        if (preferredSize != null) {
+            setSize(preferredSize.width, preferredSize.height);
+        }
+    }
+
+    public void setBounds(int x, int y, int width, int height) {
+        setLocation(x, y);
+        setSize(width, height);
     }
 
     protected void dispathComponentEvent() {
@@ -152,5 +164,7 @@ public class Component implements ImageObserver, MenuContainer,
     public void paint(Graphics g) {
     }
 
+    public void repaint() {
+    }
 
 }

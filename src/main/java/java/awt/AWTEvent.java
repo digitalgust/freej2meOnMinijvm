@@ -97,18 +97,21 @@ public class AWTEvent extends EventObject {
 
     /**
      * The event mask for selecting mouse wheel events.
+     *
      * @since 1.4
      */
     public final static long MOUSE_WHEEL_EVENT_MASK = 0x20000;
 
     /**
      * The event mask for selecting window state events.
+     *
      * @since 1.4
      */
     public final static long WINDOW_STATE_EVENT_MASK = 0x40000;
 
     /**
      * The event mask for selecting window focus events.
+     *
      * @since 1.4
      */
     public final static long WINDOW_FOCUS_EVENT_MASK = 0x80000;
@@ -130,11 +133,8 @@ public class AWTEvent extends EventObject {
     public AWTEvent(Object source, int id) {
         super(source);
         this.id = id;
-        switch(id) {
+        switch (id) {
             case ActionEvent.ACTION_PERFORMED:
-            case ItemEvent.ITEM_STATE_CHANGED:
-            case AdjustmentEvent.ADJUSTMENT_VALUE_CHANGED:
-            case TextEvent.TEXT_VALUE_CHANGED:
                 break;
             default:
         }

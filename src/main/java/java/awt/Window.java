@@ -1,7 +1,9 @@
 package java.awt;
 
 
+import org.mini.gui.GCallBack;
 import org.mini.gui.GContainer;
+import org.mini.gui.GFrame;
 import org.mini.gui.GToolkit;
 
 import java.awt.event.WindowListener;
@@ -15,7 +17,7 @@ public class Window extends Container {
 
     public void setVisible(boolean b) {
         this.getPeer().setVisible(b);
-        GToolkit.showFrame(this.getPeer());
+        if (b) GToolkit.showFrame(this.getPeer());
     }
 
     @Override
@@ -33,5 +35,9 @@ public class Window extends Container {
 
     public void pack() {
         getPeer().setLocation((getPeer().getForm().getW() - getPeer().getW()) * .5f, (getPeer().getForm().getH() - getPeer().getH()) * .5f);
+    }
+
+    public void dispose() {
+        GCallBack.getInstance().getApplication().getForm().remove(getPeer());
     }
 }
