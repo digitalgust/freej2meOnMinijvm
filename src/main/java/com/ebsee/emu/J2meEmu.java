@@ -4,6 +4,8 @@ import org.mini.apploader.GApplication;
 import org.mini.glfm.Glfm;
 import org.mini.gui.*;
 import org.recompile.freej2me.FreeJ2ME;
+import org.recompile.mobile.Mobile;
+import org.recompile.mobile.MobilePlatform;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -40,9 +42,10 @@ public class J2meEmu extends GApplication {
                     },
                     gform.getDeviceWidth(), gform.getDeviceHeight(),
                     (gobj) -> {
-                        String[] args = new String[1];
+                        String[] args = new String[2];
                         File f = gobj.getAttachment();
                         args[0] = "file:" + f.getAbsolutePath();
+                        args[1] = getSaveRoot() + "/";
                         main(args);
                     },
                     gobj -> {

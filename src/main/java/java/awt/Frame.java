@@ -17,7 +17,7 @@ public class Frame extends Window implements MenuContainer {
 //        peer = new GFrame(GCallBack.getInstance().getApplication().getForm(), title, 0, 0, 300, 200);
         GObject peer = new GPanel(GCallBack.getInstance().getApplication().getForm(), 0, 0, 300, 200);
         peer.setName(title);
-        peer.setBgColor(0xffffffff);
+        peer.setBgColor(0xccccffff);
         setPeer(peer);
     }
 
