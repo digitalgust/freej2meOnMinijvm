@@ -488,4 +488,34 @@ class BufferedImageGraphics extends Graphics2D {
         return true;
     }
 
+    public boolean drawImage(Image img,
+                             int dx1,
+                             int dy1,
+                             int dx2,
+                             int dy2,
+                             int sx1,
+                             int sy1,
+                             int sx2,
+                             int sy2,
+                             ImageObserver observer) {
+        if (img instanceof BufferedImage) {
+            BufferedImage cimg = ((BufferedImage) img);
+            int srcW = cimg.getWidth();
+            byte[] dst = bimg.getData().array();
+            byte[] src = cimg.getData().array();
+            GLMath.img_draw(dst, imgW,
+                    src, srcW,
+                    dx1, dy1, dx2 - dx1, dy2 - dy1,
+                    (float) (dx2 - dx1) / (sx2 - sx1),
+                    (float) 0f,
+                    (float) -sx1,
+                    (float) 0f,
+                    (float) (dy2 - dy1) / (sy2 - sy1),
+                    (float) -sy1,
+                    1.0f,
+                    false, 0);
+        }
+        return true;
+    }
+
 }

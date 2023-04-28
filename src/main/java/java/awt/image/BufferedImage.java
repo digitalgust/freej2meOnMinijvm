@@ -116,9 +116,23 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
             return this;
         }
         BufferedImage nimg = new BufferedImage(width, height, TYPE_INT_ARGB);
-        Graphics g2d = nimg.getGraphics();
-        g2d.drawImage(this, -x, -y, null);
-        return null;
+//        Graphics g2d = nimg.getGraphics();
+//        g2d.drawImage(this, -x, -y, null);
+
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x + width > this.getWidth()) width = this.getWidth() - x;
+        if (y + height > this.getHeight()) height = this.getHeight() - y;
+        byte[] src = gimg.getData().array();
+        byte[] dst = nimg.getData().array();
+
+        int len = width * BYTE_PER_PIXEL;
+        for (int srcY = y, imax = srcY + height, dstY = 0; srcY < imax; srcY++, dstY++) {
+            int srcRowStartBytes = (srcY * getWidth() + x) * BYTE_PER_PIXEL;
+            int dstRowStartBytes = (dstY * width) * BYTE_PER_PIXEL;
+            System.arraycopy(src, srcRowStartBytes, dst, dstRowStartBytes, len);
+        }
+        return nimg;
     }
 
     public void setRGB(int startX, int startY, int w, int h, int[] rgbArray, int offset, int scanlength) {
