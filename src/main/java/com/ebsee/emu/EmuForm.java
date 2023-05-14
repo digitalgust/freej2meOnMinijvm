@@ -1,11 +1,13 @@
 package com.ebsee.emu;
 
+import org.mini.glfm.Glfm;
 import org.mini.glfw.Glfw;
 import org.mini.gui.*;
 import org.mini.gui.event.GActionListener;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
 public class EmuForm extends GForm {
     J2meEmu app;
@@ -292,6 +294,50 @@ public class EmuForm extends GForm {
             } else {
                 KeyEvent keyEvent1 = new KeyEvent(f, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, keyCode, ch, location);
                 keyListener.keyReleased(keyEvent1);
+            }
+        }));
+    }
+
+    @Override
+    public void mouseButtonEvent(int button, boolean pressed, int x, int y) {
+        super.mouseButtonEvent(button, pressed, x, y);
+        AWTManager.iterAwtComponentAndProcess(f -> f.getMouseListeners().forEach(mouseListener -> {
+            if (pressed) {
+                if (f.getPeer().isInArea(x, y)) {
+                    MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
+                            (int) (x - f.getPeer().getX()), (int) (y - f.getPeer().getY()), x, y,
+                            1, false, MouseEvent.BUTTON1 + (button - Glfw.GLFW_MOUSE_BUTTON_1));
+                    mouseListener.mousePressed(mouseEvent);
+                }
+            } else {
+                if (f.getPeer().isInArea(x, y)) {
+                    MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0,
+                            (int) (x - f.getPeer().getX()), (int) (y - f.getPeer().getY()), x, y,
+                            1, false, MouseEvent.BUTTON1 + (button - Glfw.GLFW_MOUSE_BUTTON_1));
+                    mouseListener.mouseReleased(mouseEvent);
+                }
+            }
+        }));
+    }
+
+    @Override
+    public void touchEvent(int touchid, int phase, int x, int y) {
+        super.touchEvent(touchid, phase, x, y);
+        AWTManager.iterAwtComponentAndProcess(f -> f.getMouseListeners().forEach(mouseListener -> {
+            if (phase == Glfm.GLFMTouchPhaseBegan) {
+                if (f.getPeer().isInArea(x, y)) {
+                    MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
+                            (int) (x - f.getPeer().getX()), (int) (y - f.getPeer().getY()), x, y,
+                            1, false, MouseEvent.BUTTON1);
+                    mouseListener.mousePressed(mouseEvent);
+                }
+            } else if (phase == Glfm.GLFMTouchPhaseEnded) {
+                if (f.getPeer().isInArea(x, y)) {
+                    MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0,
+                            (int) (x - f.getPeer().getX()), (int) (y - f.getPeer().getY()), x, y,
+                            1, false, MouseEvent.BUTTON1);
+                    mouseListener.mouseReleased(mouseEvent);
+                }
             }
         }));
     }

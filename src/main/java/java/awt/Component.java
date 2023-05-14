@@ -19,6 +19,7 @@ public class Component implements ImageObserver, MenuContainer,
     private Container parent;
     java.util.List<ComponentListener> compListeners = new ArrayList<>();
     java.util.List<KeyListener> keyListeners = new ArrayList<>();
+    java.util.List<MouseListener> mouseListeners = new ArrayList<>();
 
 
     public GObject getPeer() {
@@ -99,7 +100,8 @@ public class Component implements ImageObserver, MenuContainer,
 
     public Graphics getGraphics() {
         if (gGraphics == null) {
-            gGraphics = new Graphics(this.peer, GCallBack.getInstance().getNvContext()){};
+            gGraphics = new Graphics(this.peer, GCallBack.getInstance().getNvContext()) {
+            };
         }
         return gGraphics;
     }
@@ -142,6 +144,11 @@ public class Component implements ImageObserver, MenuContainer,
     }
 
     public synchronized void addMouseListener(MouseListener l) {
+        mouseListeners.add(l);
+    }
+
+    public List<MouseListener> getMouseListeners() {
+        return mouseListeners;
     }
 
 
