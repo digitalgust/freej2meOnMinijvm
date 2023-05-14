@@ -36,7 +36,7 @@ public class Font {
 
     protected float pointSize;
 
-    private Hashtable fRequestedAttributes;
+    private Hashtable fRequestedAttributes = new Hashtable();
 
     boolean createdFont = true;
     BitmapFont bitmapfont;
@@ -57,6 +57,7 @@ public class Font {
     }
 
     private Font(Map attributes, boolean created) {
+        this(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 14);
         this.createdFont = created;
         fRequestedAttributes.putAll(attributes);
     }

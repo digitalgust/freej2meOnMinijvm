@@ -62,8 +62,8 @@
                         <configuration>
                             <tasks>
 
-                                <mkdir dir="${basedir}/../miniJVM/binary/mac_x64/apps/"/>
-                                <copy todir="${basedir}/../miniJVM/binary/mac_x64/apps/" overwrite="true">
+                                <mkdir dir="${basedir}/../miniJVM/binary/win_x64/apps/"/>
+                                <copy todir="${basedir}/../miniJVM/binary/win_x64/apps/" overwrite="true">
                                     <fileset dir="${project.build.directory}" erroronmissingdir="false">
                                         <include name="${project.artifactId}.jar"/>
                                     </fileset>

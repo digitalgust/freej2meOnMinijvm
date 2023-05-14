@@ -99,7 +99,7 @@ public class Component implements ImageObserver, MenuContainer,
 
     public Graphics getGraphics() {
         if (gGraphics == null) {
-            gGraphics = new Graphics(this.peer, GCallBack.getInstance().getNvContext());
+            gGraphics = new Graphics(this.peer, GCallBack.getInstance().getNvContext()){};
         }
         return gGraphics;
     }

@@ -9,7 +9,7 @@ import javax.microedition.lcdui.game.Layer;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ImageObserver;
 
-public class Graphics extends GGraphics {
+public abstract class Graphics extends GGraphics {
     protected Font font;
     protected FontMetrics fontMetrics;
 
@@ -57,10 +57,10 @@ public class Graphics extends GGraphics {
 
     public Rectangle getClipBounds(Rectangle r) {
         if (r == null) r = new Rectangle();
-        r.x = super.getClipX();
-        r.y = super.getClipY();
-        r.width = super.getClipWidth();
-        r.height = super.getClipHeight();
+        r.x = getClipX();
+        r.y = getClipY();
+        r.width = getClipWidth();
+        r.height = getClipHeight();
         return r;
     }
 
@@ -76,14 +76,18 @@ public class Graphics extends GGraphics {
     }
 
     public void drawPolygon(int[] x, int[] y, int nPoints) {
+        throw new RuntimeException("not implementation yet.");
     }
 
     public void fillPolygon(int[] x, int[] y, int nPoints) {
+        throw new RuntimeException("not implementation yet.");
     }
 
     public void clearRect(int x, int y, int width, int height) {
+        throw new RuntimeException("not implementation yet.");
     }
 
     public void setBackground(Color color) {
+        throw new RuntimeException("not implementation yet.");
     }
 }
