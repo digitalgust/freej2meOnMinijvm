@@ -2,6 +2,9 @@ package java.awt;
 
 import org.mini.gui.GCallBack;
 import org.mini.gui.GForm;
+import org.mini.gui.GObject;
+
+import java.util.Arrays;
 
 public class AWTManager {
 
@@ -13,13 +16,24 @@ public class AWTManager {
     static public void iterAwtComponentAndProcess(AwtComponentProcessor processor) {
         GForm gForm = GCallBack.getInstance().getApplication().getForm();
         if (gForm != null) {
-            gForm.getElements().forEach(gObject -> {
+            GObject[] objs = new GObject[gForm.getElements().size()];
+            gForm.getElements().toArray(objs);
+            for (int i = 0; i < objs.length; i++) {
+                GObject gObject = objs[i];
                 Object obj = gObject.getAttachment();
                 if (obj != null && obj instanceof Component) {
                     Component comp = (Component) obj;
                     deepProcess(comp, processor);
                 }
-            });
+            }
+//    this would throw concurrent exception
+//            gForm.getElements().forEach(gObject -> {
+//                Object obj = gObject.getAttachment();
+//                if (obj != null && obj instanceof Component) {
+//                    Component comp = (Component) obj;
+//                    deepProcess(comp, processor);
+//                }
+//            });
         }
     }
 

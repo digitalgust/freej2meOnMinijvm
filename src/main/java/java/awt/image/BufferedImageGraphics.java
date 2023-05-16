@@ -5,12 +5,6 @@ import org.mini.gui.GObject;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.text.CollationKey;
-import java.text.Collator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 
 class BufferedImageGraphics extends Graphics2D {
     static final int CELL_BYTES = 4;
@@ -65,13 +59,118 @@ class BufferedImageGraphics extends Graphics2D {
         fillRect(x, y, width, height);
     }
 
-    public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        throw new RuntimeException("not implementation yet.");
+    public void fillArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
+        startAngle = ((startAngle % 360) + 360) % 360;
+        arcAngle = arcAngle > 360 ? 360 : arcAngle;// range: 0-360
+        arcAngle = arcAngle < -360 ? -360 : arcAngle;
+        if (arcAngle < 0) {
+            int tmp = startAngle + arcAngle;
+            startAngle = (tmp + 360) % 360;
+            arcAngle = -arcAngle;
+        }
+        int endAngle = startAngle + arcAngle;
+        if (endAngle > 360) {
+            //分两段画
+            drawArcImpl(left, top, width, height, startAngle, 360, true);
+            drawArcImpl(left, top, width, height, 0, endAngle % 360, true);
+        } else {
+            drawArcImpl(left, top, width, height, startAngle, arcAngle, true);
+        }
     }
 
 
-    public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        throw new RuntimeException("not implementation yet.");
+    /**
+     * OpenAI generate
+     *
+     * @param left
+     * @param top
+     * @param width
+     * @param height
+     * @param startAngle
+     * @param arcAngle
+     */
+    public void drawArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
+        startAngle = ((startAngle % 360) + 360) % 360;
+        arcAngle = arcAngle > 360 ? 360 : arcAngle;// range: 0-360
+        arcAngle = arcAngle < -360 ? -360 : arcAngle;
+        if (arcAngle < 0) {
+            int tmp = startAngle + arcAngle;
+            startAngle = (tmp + 360) % 360;
+            arcAngle = -arcAngle;
+        }
+        int endAngle = startAngle + arcAngle;
+        if (endAngle > 360) {
+            //分两段画
+            drawArcImpl(left, top, width, height, startAngle, 360, false);
+            drawArcImpl(left, top, width, height, 0, endAngle % 360, false);
+        } else {
+            drawArcImpl(left, top, width, height, startAngle, arcAngle, false);
+        }
+    }
+
+    private void drawArcImpl(int left, int top, int width, int height, int startAngle, int arcAngle, boolean fill) {
+        int endAngle = startAngle + arcAngle;
+
+        int a = width / 2;
+        int b = height / 2;
+        int x0 = left + width / 2;
+        int y0 = top + height / 2;
+        int x = 0, y = b;
+        int d1 = b * b - a * a * b + a * a / 4;
+        int dx = 2 * b * b * x;
+        int dy = 2 * a * a * y;
+        double startRadian = Math.toRadians(startAngle);// 起始角度
+        double endRadian = Math.toRadians(endAngle); // 终止角度
+        while (dx < dy) {
+            drawPixImpl(x0, y0, x, y, startRadian, endRadian, fill);
+            if (d1 < 0) {
+                x++;
+                dx += 2 * b * b;
+                d1 += dx + b * b;
+            } else {
+                x++;
+                y--;
+                dx += 2 * b * b;
+                dy -= 2 * a * a;
+                d1 += dx - dy + b * b;
+            }
+        }
+        int d2 = (int) (b * b * (x + 0.5) * (x + 0.5) + a * a * (y - 1) * (y - 1) - a * a * b * b);
+        while (y >= 0) {
+            drawPixImpl(x0, y0, x, y, startRadian, endRadian, fill);
+
+            if (d2 > 0) {
+                y--;
+                dy -= 2 * a * a;
+                d2 += a * a - dy;
+            } else {
+                y--;
+                x++;
+                dx += 2 * b * b;
+                dy -= 2 * a * a;
+                d2 += dx - dy + a * a;
+            }
+        }
+    }
+
+    private void drawPixImpl(int x0, int y0, int x, int y, double startRadian, double endRadian, boolean fill) {
+        double radian;
+        radian = Math.atan2(y, x);
+        if (radian >= startRadian && radian <= endRadian) {
+            drawLine(x0 + x, y0 - y, fill ? x0 : (x0 + x), fill ? y0 : (y0 - y));
+        }
+        radian = Math.atan2(y, -x);
+        if (radian >= startRadian && radian <= endRadian) {
+            drawLine(x0 - x, y0 - y, fill ? x0 : (x0 - x), fill ? y0 : (y0 - y));
+        }
+        radian = Math.atan2(-y, x) + Math.PI * 2;
+        if (radian >= startRadian && radian <= endRadian) {
+            drawLine(x0 + x, y0 + y, fill ? x0 : (x0 + x), fill ? y0 : (y0 + y));
+        }
+        radian = Math.atan2(-y, -x) + Math.PI * 2;
+        if (radian >= startRadian && radian <= endRadian) {
+            drawLine(x0 - x, y0 + y, fill ? x0 : (x0 - x), fill ? y0 : (y0 + y));
+        }
     }
 
     public void drawLine(int x1, int y1, int x2, int y2) {
@@ -95,7 +194,7 @@ class BufferedImageGraphics extends Graphics2D {
             }
             for (int i = x1; i <= x2; i++) {
                 if (i < clipX || i > cx2) continue;
-                int ty = y1 + (x2 == x1 ? 0 : (y2 - y1) * i / (x2 - x1));
+                int ty = x2 == x1 ? x1 : (y1 + ((y2 - y1) * (i - x1) / (x2 - x1)));
                 if (ty < clipY || ty > cy2) continue;
                 GLMath.img_fill(bimgArr, ty * imgW + i, 1, curColor);
             }
@@ -110,7 +209,7 @@ class BufferedImageGraphics extends Graphics2D {
             }
             for (int i = y1; i <= y2; i++) {
                 if (i < clipY || i > cy2) continue;
-                int tx = x1 + (y2 == y1 ? 0 : (x2 - x1) * i / (y2 - y1));
+                int tx = y2 == y1 ? x1 : (x1 + ((x2 - x1) * (i - y1) / (y2 - y1)));
                 if (tx < clipX || tx > cx2) continue;
                 GLMath.img_fill(bimgArr, i * imgW + tx, 1, curColor);
             }
