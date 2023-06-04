@@ -3,6 +3,7 @@ package java.awt.image;
 import org.mini.gl.GLMath;
 import org.mini.gui.GImage;
 import org.mini.gui.ImageMutable;
+import org.mini.reflect.DirectMemObj;
 import org.mini.reflect.ReflectArray;
 import org.mini.reflect.vm.RefNative;
 
@@ -135,17 +136,18 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
         return nimg;
     }
 
-    public void setRGB(int startX, int startY, int w, int h, int[] rgbArray, int offset, int scanlength) {
+    public void setRGB(int startX, int startY, int w, int h, int[] argbArray, int offset, int scanlength) {
 
         int imgW = gimg.getWidth();
+
         for (int y = startY, ymax = startY + h; y < ymax; y++) {
             for (int x = startX, xmax = startX + w; x < xmax; x++) {
-                int pixel = rgbArray[offset + (y - startY) * scanlength + (x - startX)];
-                pixel = (0xff << 24) | pixel;
+                int pixel = argbArray[offset + (y - startY) * scanlength + (x - startX)];
                 GLMath.img_fill(getData().array(), y * imgW + x, 1, pixel);
             }
         }
 
+        //this method is rgba format
 //        if (w <= 0 || h <= 0) return;
 //        if (startX < 0) startX = 0;
 //        if (startY < 0) startY = 0;
@@ -154,11 +156,11 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
 //        int imgW = gimg.getWidth();
 //        int imgH = gimg.getHeight();
 //
-//        long rgbAddr = ReflectArray.getBodyPtr(rgbArray);
+//        long rgbAddr = ReflectArray.getBodyPtr(argbArray);
 //        int rgbY = offset / scanlength;
 //        int rgbX = offset % scanlength;
 //        int rgbW = scanlength;
-//        int rgbH = rgbArray.length / scanlength;
+//        int rgbH = argbArray.length / scanlength;
 //
 //        if (startX + w > imgW) {
 //            w = imgW - startX;
