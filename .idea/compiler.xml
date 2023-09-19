@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="freej2meonminijvm" />
-        <module name="freej2meOnMinijvm" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
