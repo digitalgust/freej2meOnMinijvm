@@ -194,7 +194,7 @@ class BufferedImageGraphics extends Graphics2D {
             }
             for (int i = x1; i <= x2; i++) {
                 if (i < clipX || i > cx2) continue;
-                int ty = x2 == x1 ? x1 : (y1 + ((y2 - y1) * (i - x1) / (x2 - x1)));
+                int ty = x2 == x1 ? y1 : (y1 + ((y2 - y1) * (i - x1) / (x2 - x1)));
                 if (ty < clipY || ty > cy2) continue;
                 GLMath.img_fill(bimgArr, ty * imgW + i, 1, curColor);
             }
@@ -375,6 +375,8 @@ class BufferedImageGraphics extends Graphics2D {
             int x2 = x[(i + 1) % n];
             int y2 = y[(i + 1) % n];
             if (y1 == y2) {
+                edgeList[y1 - ymin].add(x1);
+                edgeList[y2 - ymin].add(x2);
                 continue;
             }
             if (y1 > y2) {
@@ -388,8 +390,9 @@ class BufferedImageGraphics extends Graphics2D {
             }
             float dx = (float) (x2 - x1) / (float) (y2 - y1);
             float xi = x1;
-            for (int yi = y1; yi <= y2; yi++) {
-                edgeList[yi - ymin].add((int) xi);
+            for (int yi = y1; yi < y2; yi++) {
+                int ixi = Math.round(xi);
+                edgeList[yi - ymin].add(ixi);
                 xi += dx;
             }
         }
