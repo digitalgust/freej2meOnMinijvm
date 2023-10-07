@@ -3,6 +3,7 @@ package com.ebsee.emu;
 import org.mini.apploader.GApplication;
 import org.mini.glfm.Glfm;
 import org.mini.gui.*;
+import org.mini.gui.event.GSizeChangeListener;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
@@ -52,6 +53,17 @@ public class J2meEmu extends GApplication {
                         closeApp();
                     });
             gform.add(chooser);
+            gform.setSizeChangeListener(new GSizeChangeListener() {
+                @Override
+                public void onSizeChange(int i, int i1) {
+                    gform.removeAllButtons();
+                    gform.addButtons();
+                    GPanel panel = GToolkit.getComponent(getForm(), "FreeJ2ME");
+                    if (panel != null) {
+                        panel.setLocation((gform.getW() - panel.getW()) * .5f, (gform.getH() - panel.getH()) * .5f);
+                    }
+                }
+            });
 
         }
         return gform;

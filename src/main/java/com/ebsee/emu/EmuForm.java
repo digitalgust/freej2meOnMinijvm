@@ -8,6 +8,7 @@ import org.mini.gui.event.GActionListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.function.Predicate;
 
 public class EmuForm extends GForm {
     J2meEmu app;
@@ -38,12 +39,23 @@ public class EmuForm extends GForm {
 
     }
 
+    public void removeAllButtons() {
+        GForm form = getForm();
+        if (form != null) {
+            form.getElements().removeIf(new Predicate<GObject>() {
+                @Override
+                public boolean test(GObject gObject) {
+                    return gObject instanceof GButton;
+                }
+            });
+        }
+    }
+
     public void addButtons() {
         GForm form = getForm();
-        float dw = (getW() - LCD_W) * .5f;
-        float dh = dw * .6f;
+        float dw = 240f;
         float dx = dw * 0.4f;
-        float dy = (getH() - dh) * 0.5f;
+        float dy = getH() - dw;
         float butW = dw * 0.2f;
         float butH = butW;
 
@@ -95,15 +107,15 @@ public class EmuForm extends GForm {
         dy = getH() - butH;
         GButton menu = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(menu);
-        menu.setPreIcon("●");//
+        menu.setPreIcon("⚏");//
         menu.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_Q, 'q', KeyEvent.KEY_LOCATION_UNKNOWN);
         });
-        dx = dw + LCD_W;
+        dx = getW() - dw;
         dy = getH() - butH;
         GButton back = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(back);
-        back.setPreIcon("\uE712");
+        back.setPreIcon("⇆");
         back.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
@@ -112,7 +124,7 @@ public class EmuForm extends GForm {
         butW = dw * 0.24f;
         float spacingX = dw * 0.04f;
         float spacingY = getH() * 0.02f;
-        dx = dw + LCD_W + dw * 0.1f;
+        dx = getW() - dw + butW * .5f;
         dy = getH() * 0.9f - (butH + spacingY) * 5;
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 3; col++) {
@@ -130,7 +142,7 @@ public class EmuForm extends GForm {
         }
 
         //OK
-        dx = dw + LCD_W + (dw - butW) * .5f;
+        dx = getW() - dw + butW * 1.5f + spacingX;
         dy = getH() * 0.9f - butH;
         GButton ok = new GButton(getForm(), "OK", dx, dy, butW, butH);
         form.add(ok);
