@@ -1,6 +1,12 @@
 # freej2me On Minijvm
 J2me adapted minijvm 
 
+
+## Run
+ Download the release and run.   
+
+
+## Build   
 Open the project in Idea    
 Run maven package task generate freej2meonminijvm.jar    
 Run minijvm.exe and install from local file , choose the freej2meonminijvm.jar for install    
