@@ -3,7 +3,7 @@ J2me adapted minijvm
 
 
 ## Run
- Download the release and run.   
+ Download the release and run.   https://github.com/digitalgust/freej2meOnMinijvm/releases/tag/Ver1.0.0
 
 
 ## Build   
