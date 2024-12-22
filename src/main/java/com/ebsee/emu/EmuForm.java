@@ -1,16 +1,18 @@
 package com.ebsee.emu;
 
+import org.mini.apploader.AppLoader;
 import org.mini.glfm.Glfm;
 import org.mini.glfw.Glfw;
 import org.mini.gui.*;
-import org.mini.gui.event.GActionListener;
+import org.mini.gui.event.GChildrenListener;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.Properties;
 import java.util.function.Predicate;
 
-public class EmuForm extends GForm {
+public class EmuForm extends GForm implements GChildrenListener {
     J2meEmu app;
     final static float LCD_W = 240f, LCD_H = 320f;
     String[] NUM_TAG = {
@@ -53,18 +55,31 @@ public class EmuForm extends GForm {
 
     public void addButtons() {
         GForm form = getForm();
-        float dw = 240f;
-        float dx = dw * 0.4f;
-        float dy = getH() - dw;
-        float butW = dw * 0.2f;
-        float butH = butW;
 
-        GButton exitbut = new GButton(getForm(), GLanguage.getString("Exit"), 20, 0, 60f, 25f);
+        GButton exitbut = new GButton(getForm(), "", 0, 30, 40f, 25f);
         form.add(exitbut);
+        exitbut.setPreIcon("\uE741");
         exitbut.setActionListener(gObject -> {
             app.closeApp();
         });
-        GButton esc = new GButton(getForm(), "", 90f, 0, 60f, 25f);
+        GButton open = new GButton(getForm(), "", 0, 60, 40f, 25f);
+        form.add(open);
+        open.setPreIcon("\uD83D\uDCC1");
+        open.setActionListener(gObject -> {
+            app.openFileChooser();
+        });
+        GButton orientation = new GButton(getForm(), "", getW() - 40, 30, 40f, 25f);
+        form.add(orientation);
+        orientation.setPreIcon("\uE717");
+        orientation.setActionListener(gObject -> {
+            if (Glfm.glfmGetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay()) == Glfm.GLFMInterfaceOrientationPortrait) {
+                Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationLandscapeLeft);
+            } else {
+                Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationPortrait);
+            }
+            Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
+        });
+        GButton esc = new GButton(getForm(), "", getW() - 40, 60, 40f, 25f);
         form.add(esc);
         esc.setPreIcon("\uE005");
         esc.setStateChangeListener(gObject -> {
@@ -72,13 +87,43 @@ public class EmuForm extends GForm {
         });
 
         //navi
+        final float dw = 240f;
+        float leftPos = getW() > getH() ? 10f : 2f;
+        float butW = 48f;
+        float butH = butW;
+        float dx = leftPos + butW;
+        float dy = getH() - dw;
+
+
+        //menu back
+        butH = 35f;
+        dx = leftPos;
+        GButton menu = new GButton(getForm(), "", dx, dy, butW, butH);
+        form.add(menu);
+        menu.setName("SOFT1");
+        menu.setPreIcon("⚏");//
+        menu.setStateChangeListener(gObject -> {
+            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_Q, 'q', KeyEvent.KEY_LOCATION_UNKNOWN);
+        });
+        dx = leftPos + butW * 2f;
+        GButton back = new GButton(getForm(), "", dx, dy, butW, butH);
+        form.add(back);
+        menu.setName("SOFT2");
+        back.setPreIcon("⇆");
+        back.setStateChangeListener(gObject -> {
+            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
+        });
+
+        butH = butW;
+        dx = leftPos + butW;
+        dy += butH;
         GButton up = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(up);
         up.setPreIcon("\uE4AF");
         up.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_UP, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
-        dx = dw * 0.2f;
+        dx = leftPos;
         dy += butH;
         GButton left = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(left);
@@ -86,14 +131,21 @@ public class EmuForm extends GForm {
         left.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_LEFT, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
-        dx = dw * 0.6f;
+        //OK
+        dx = leftPos + butW;
+        GButton ok2 = new GButton(getForm(), "OK", dx + 2, dy + 2, butW - 4, butH - 4);
+        form.add(ok2);
+        ok2.setStateChangeListener(gObject -> {
+            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
+        });
+        dx = leftPos + butW * 2f;
         GButton right = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(right);
         right.setPreIcon("\uE4AE");
         right.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_RIGHT, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
-        dx = dw * 0.4f;
+        dx = leftPos + butW;
         dy += butH;
         GButton down = new GButton(getForm(), "", dx, dy, butW, butH);
         form.add(down);
@@ -101,31 +153,15 @@ public class EmuForm extends GForm {
         down.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_DOWN, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
-        //menu back
-        butH = 30f;
-        dx = dw - butW;
-        dy = getH() - butH;
-        GButton menu = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(menu);
-        menu.setPreIcon("⚏");//
-        menu.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_Q, 'q', KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        dx = getW() - dw;
-        dy = getH() - butH;
-        GButton back = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(back);
-        back.setPreIcon("⇆");
-        back.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
+
 
         //num pad
         butW = dw * 0.24f;
-        float spacingX = dw * 0.04f;
-        float spacingY = getH() * 0.02f;
-        dx = getW() - dw + butW * .5f;
-        dy = getH() * 0.9f - (butH + spacingY) * 5;
+        butH = 35f;
+        float spacingX = getW() > getH() ? 6f : 2;
+        float spacingY = 6f;
+        dx = getW() - (butW + spacingX) * 3f;
+        dy = getH() - dw;
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 3; col++) {
                 float tmpx = dx + col * (spacingX + butW);
@@ -142,8 +178,8 @@ public class EmuForm extends GForm {
         }
 
         //OK
-        dx = getW() - dw + butW * 1.5f + spacingX;
-        dy = getH() * 0.9f - butH;
+        dx = getW() - (butW + spacingX) * 2f;
+        dy = dy + 4 * (spacingY + butH);
         GButton ok = new GButton(getForm(), "OK", dx, dy, butW, butH);
         form.add(ok);
         //ok.setPreIcon("OK");
@@ -155,19 +191,11 @@ public class EmuForm extends GForm {
     @Override
     public void keyEventGlfm(int key, int action, int mods) {
         super.keyEventGlfm(key, action, mods);
-        GPanel panel = GToolkit.getComponent(getForm(), "LCD_FRAME");
-        if (panel != null) {
-
-        }
     }
 
     @Override
     public void keyEventGlfw(int key, int scanCode, int action, int mods) {
         super.keyEventGlfw(key, scanCode, action, mods);
-        GPanel panel = GToolkit.getComponent(getForm(), "FreeJ2ME");
-        if (panel != null) {
-
-        }
         switch (key) {
             case Glfw.GLFW_KEY_A:
             case Glfw.GLFW_KEY_LEFT: {
@@ -292,20 +320,48 @@ public class EmuForm extends GForm {
 
     }
 
-    Frame findJ2meFrame() {
-        GPanel panel = GToolkit.getComponent(getForm(), "FreeJ2ME");
-        return panel.getAttachment();
+    GFrame findJ2meFrame(int x, int y) {
+        GForm gForm = app.getForm();
+        for (int i = gForm.getElements().size() - 1; i >= 0; i--) {
+            GObject gobj = gForm.getElements().get(i);
+            if (gobj instanceof GFrame) {
+                GFrame curFrame = (GFrame) gobj;
+                return curFrame;
+            }
+        }
+//        GObject gobj = app.getForm().findByXY(x, y);
+//        if (gobj != null) {
+//            GFrame frame = gobj.getFrame();
+//            if (frame != null && frame.getAttachment() instanceof Frame) {
+//                curFrame = frame;
+//                return frame;
+//            }
+//        }
+//        if (curFrame == null) {
+//            for (GObject go : gForm.getElements()) {
+//                if (go instanceof GFrame) {
+//                    if (go.getAttachment() instanceof Frame) {
+//                        curFrame = (GFrame) go;
+//                        return curFrame;
+//                    }
+//                }
+//            }
+//        }
+        return null;
     }
 
 
     void dispathKeyEvent(boolean pressed, int keyCode, char ch, int location) {
-        AWTManager.iterAwtComponentAndProcess(f -> f.getKeyListeners().forEach(keyListener -> {
+        GFrame curFrame = findJ2meFrame(0, 0);
+        AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getKeyListeners().forEach(keyListener -> {
             if (pressed) {
                 KeyEvent keyEvent = new KeyEvent(f, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, keyCode, ch, location);
                 keyListener.keyPressed(keyEvent);
+                //System.out.println("keyPressed " + keyCode);
             } else {
                 KeyEvent keyEvent1 = new KeyEvent(f, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, keyCode, ch, location);
                 keyListener.keyReleased(keyEvent1);
+                //System.out.println("keyReleased " + keyCode);
             }
         }));
     }
@@ -313,7 +369,8 @@ public class EmuForm extends GForm {
     @Override
     public void mouseButtonEvent(int button, boolean pressed, int x, int y) {
         super.mouseButtonEvent(button, pressed, x, y);
-        AWTManager.iterAwtComponentAndProcess(f -> f.getMouseListeners().forEach(mouseListener -> {
+        GFrame curFrame = findJ2meFrame(0, 0);
+        AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (pressed) {
                 if (f.getPeer().isInArea(x, y)) {
                     MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
@@ -335,7 +392,8 @@ public class EmuForm extends GForm {
     @Override
     public void touchEvent(int touchid, int phase, int x, int y) {
         super.touchEvent(touchid, phase, x, y);
-        AWTManager.iterAwtComponentAndProcess(f -> f.getMouseListeners().forEach(mouseListener -> {
+        GFrame curFrame = findJ2meFrame(0, 0);
+        AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (phase == Glfm.GLFMTouchPhaseBegan) {
                 if (f.getPeer().isInArea(x, y)) {
                     MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
@@ -353,4 +411,41 @@ public class EmuForm extends GForm {
             }
         }));
     }
+
+    @Override
+    public void onChildAdd(GObject child) {
+        if (child instanceof GFrame) {
+            GFrame frame = (GFrame) child;
+            frame.setLocationChangeListener((oldLeft, oldTop, newLeft, newTop) -> {
+//                if (getW() > getH()) {//横向
+//                    child.setLocation(getW() / 2 - child.getW() / 2, 0);
+//                } else {
+//                    child.setLocation(getW() / 2 - child.getW() / 2, 0);
+//                }
+                if (child.getAttachment() instanceof Frame) {
+                    app.setProperty("frame.location.x", String.format("%f", child.getLocationLeft()));
+                    app.setProperty("frame.location.y", String.format("%f", child.getLocationTop()));
+                }
+            });
+
+            try {
+                if (child.getAttachment() instanceof Frame) {
+                    frame.setLocation(Float.parseFloat(app.getProperty("frame.location.x", "0")), Float.parseFloat(app.getProperty("frame.location.y", "0")));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onChildRemove(GObject child) {
+
+    }
+
+    public GFrame getCurFrame() {
+        return findJ2meFrame(0, 0);
+    }
+
+
 }

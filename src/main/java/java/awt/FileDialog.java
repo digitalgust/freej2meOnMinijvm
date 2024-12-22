@@ -33,7 +33,7 @@ public class FileDialog extends Window {
 
     public void setVisible(boolean b) {
         GForm gform = GCallBack.getInstance().getApplication().getForm();
-        GObject peer = GToolkit.getFileChooser(gform, "Select J2me Jar", null, new FileFilter() {
+        GObject peer = GToolkit.getFileChooser(gform, "Select file", null, new FileFilter() {
             @Override
             public boolean accept(File file) {
                 if (filter == null) return true;
@@ -52,6 +52,7 @@ public class FileDialog extends Window {
         gf.setTitle(title);
 
         peer.setVisible(b);
+        setPeer(peer);
         GToolkit.showFrame(peer);
         while (true) {
             if (peer.getForm().contains(peer)) {
@@ -63,7 +64,6 @@ public class FileDialog extends Window {
                 break;
             }
         }
-        setPeer(peer);
     }
 
 

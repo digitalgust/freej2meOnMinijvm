@@ -8,17 +8,13 @@ import org.mini.gui.GPanel;
 
 public class Frame extends Window implements MenuContainer {
 
-
     public Frame() {
         this("");
     }
 
     public Frame(String title) {
-//        peer = new GFrame(GCallBack.getInstance().getApplication().getForm(), title, 0, 0, 300, 200);
-        GObject peer = new GPanel(GCallBack.getInstance().getApplication().getForm(), 0, 0, 300, 200);
-        peer.setName(title);
-        peer.setBgColor(0xccccffff);
-        setPeer(peer);
+        super();
+        setTitle(title);
     }
 
     public synchronized void setIconImage(Image image) {
@@ -30,5 +26,19 @@ public class Frame extends Window implements MenuContainer {
     }
 
     public void setTitle(String title) {
+        ((GFrame) getPeer()).setTitle(title);
     }
+
+    public String getTitle() {
+        return ((GFrame) getPeer()).getTitle();
+    }
+
+    public int getHeight() {
+        return (int) ((GFrame) getPeer()).getView().getH();
+    }
+
+    public int getWidth() {
+        return (int) ((GFrame) getPeer()).getView().getW();
+    }
+
 }

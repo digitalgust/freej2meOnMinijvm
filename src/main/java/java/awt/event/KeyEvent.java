@@ -2,7 +2,7 @@ package java.awt.event;
 
 import java.awt.*;
 
-public class KeyEvent {
+public class KeyEvent extends InputEvent {
 
     /**
      * The first number in the range of ids used for key events.
@@ -834,6 +834,7 @@ public class KeyEvent {
 
     public KeyEvent(Component source, int id, long when, int modifiers,
                     int keyCode, char keyChar, int keyLocation) {
+        super(source, id, when, modifiers);
         this.source = source;
         this.id = id;
         this.when = when;
@@ -841,5 +842,9 @@ public class KeyEvent {
         this.keyCode = keyCode;
         this.keyChar = keyChar;
         this.keyLocation = keyLocation;
+    }
+
+    public char getKeyChar() {
+        return keyChar;
     }
 }

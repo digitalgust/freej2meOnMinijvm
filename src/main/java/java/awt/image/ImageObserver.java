@@ -1,21 +1,10 @@
-/*
- * @(#)ImageObserver.java	1.26 03/01/23
- *
- * Copyright 2003 Sun Microsystems, Inc. All rights reserved.
- * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
+
 
 package java.awt.image;
 
 import java.awt.Image;
 
-/**
- * An asynchronous update interface for receiving notifications about
- * Image information as the Image is constructed.
- *
- * @version 	1.26 01/23/03
- * @author 	Jim Graham
- */
+
 public interface ImageObserver {
     /**
      * This method is called when information about an image which was

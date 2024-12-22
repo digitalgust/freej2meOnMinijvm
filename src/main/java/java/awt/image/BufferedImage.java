@@ -3,14 +3,10 @@ package java.awt.image;
 import org.mini.gl.GLMath;
 import org.mini.gui.GImage;
 import org.mini.gui.ImageMutable;
-import org.mini.reflect.DirectMemObj;
-import org.mini.reflect.ReflectArray;
-import org.mini.reflect.vm.RefNative;
 
 import javax.imageio.WritableRenderedImage;
 import java.awt.*;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 
 
 /**

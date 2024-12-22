@@ -1,9 +1,6 @@
 package java.awt;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.TextEvent;
 import java.util.EventObject;
 
 public class AWTEvent extends EventObject {
@@ -127,6 +124,11 @@ public class AWTEvent extends EventObject {
      */
     public final static int RESERVED_ID_MAX = 1999;
 
+    static int initedId = (int) (Math.random() * Integer.MAX_VALUE);
+
+    protected void initIDs() {
+        initedId++;
+    }
 
     protected int id;
 

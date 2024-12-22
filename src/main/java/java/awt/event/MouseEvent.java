@@ -2,7 +2,7 @@ package java.awt.event;
 
 import java.awt.*;
 
-public class MouseEvent {
+public class MouseEvent extends InputEvent {
 
     /**
      * The first number in the range of ids used for mouse events.
@@ -136,6 +136,7 @@ public class MouseEvent {
     public MouseEvent(Component source, int id, long when, int modifiers,
                       int x, int y, int xAbs, int yAbs,
                       int clickCount, boolean popupTrigger, int button) {
+        super(source, id, when, modifiers);
         this.x = x;
         this.y = y;
         this.xAbs = xAbs;

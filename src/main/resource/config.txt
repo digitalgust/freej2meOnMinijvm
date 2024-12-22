@@ -1,7 +1,7 @@
-name=freej2me
+name=J2ME-EMU
 app=com.ebsee.emu.J2meEmu
-icon=/res/icon.png
-orientation=h
-desc=j2me emulator.
+icon=/j2meemu.png
+orientation=v
+desc=J2ME Emulator.
 version=1.0.0
-upgradeurl=http://10.0.0.180/freej2me.jar
+upgradeurl=https://p.ysbit.cn/static/apps/j2meemu.jar

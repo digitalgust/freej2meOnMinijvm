@@ -15,4 +15,22 @@ public abstract class Graphics2D extends Graphics {
     public AffineTransform getTransform() {
         return transform;
     }
+
+
+    public void rotate(double theta) {
+
+    }
+
+    public void rotate(double theta, double x, double y) {
+
+    }
+
+    public void scale(double sx, double sy) {
+
+    }
+
+    public void shear(double shx, double shy) {
+
+    }
+
 }
