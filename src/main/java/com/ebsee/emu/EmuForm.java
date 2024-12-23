@@ -354,6 +354,7 @@ public class EmuForm extends GForm implements GChildrenListener {
     void dispathKeyEvent(boolean pressed, int keyCode, char ch, int location) {
         GFrame curFrame = findJ2meFrame(0, 0);
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getKeyListeners().forEach(keyListener -> {
+
             if (pressed) {
                 KeyEvent keyEvent = new KeyEvent(f, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, keyCode, ch, location);
                 keyListener.keyPressed(keyEvent);
