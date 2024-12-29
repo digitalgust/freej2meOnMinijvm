@@ -18,5 +18,5 @@ https://github.com/digitalgust/freej2me
 
 screen shot:
 
- <div align=center><img width="640" height="520" src="https://raw.githubusercontent.com/digitalgust/freej2meOnMinijvm/master/screen.png"/></div>
+ <div align=center><img width="900" height="536" src="https://raw.githubusercontent.com/digitalgust/freej2meOnMinijvm/master/screen.png"/></div>
 
