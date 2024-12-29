@@ -14,7 +14,11 @@ class BufferedImageGraphics extends Graphics2D {
     byte[] bimgArr;
     int imgW, imgH;
 
-
+    ThreadLocal<AffineTransform> transform = new ThreadLocal() {
+        protected AffineTransform initialValue() {
+            return new AffineTransform();
+        }
+    };
     private int transX, transY;
 
 
@@ -723,7 +727,8 @@ class BufferedImageGraphics extends Graphics2D {
     public boolean drawImage(Image img, int x, int y,
                              ImageObserver observer) {
         if (img instanceof BufferedImage) {
-            AffineTransform af = new AffineTransform();
+            AffineTransform af = transform.get();
+            af.setToIdentity();
             af.translate(x, y);
             drawImage(img, af, observer);
         }
@@ -735,7 +740,8 @@ class BufferedImageGraphics extends Graphics2D {
                              ImageObserver observer) {
         if (img instanceof BufferedImage) {
             BufferedImage cimg = ((BufferedImage) img);
-            AffineTransform af = new AffineTransform();
+            AffineTransform af = transform.get();
+            af.setToIdentity();
             af.translate(x, y);
             af.scale((double) width / cimg.getWidth(), (double) height / cimg.getHeight());
             drawImage(img, af, observer);

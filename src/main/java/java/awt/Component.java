@@ -1,6 +1,7 @@
 package java.awt;
 
 import org.mini.gui.GCallBack;
+import org.mini.gui.GContainer;
 import org.mini.gui.GObject;
 import sun.misc.GC;
 
@@ -174,4 +175,10 @@ public class Component implements ImageObserver, MenuContainer,
     public void repaint() {
     }
 
+    public void requestFocus() {
+        GContainer p = peer.getParent();
+        if (p != null) {
+            peer.getParent().setCurrent(peer);
+        }
+    }
 }

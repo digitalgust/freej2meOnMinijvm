@@ -14,40 +14,40 @@
 
 
     <dependencies>
-        <dependency>
-            <groupId>org.minijvm</groupId>
-            <artifactId>minijvm_rt</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/binary/lib/minijvm_rt.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.minijvm</groupId>
-            <artifactId>glfw_gui</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/binary/libex/glfw_gui.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.minijvm</groupId>
-            <artifactId>glfm_gui</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/mobile/assets/resfiles/glfm_gui.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.minijvm</groupId>
-            <artifactId>xgui</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/../miniJVM/binary/libex/xgui.jar</systemPath>
-        </dependency>
-
         <!--        <dependency>-->
-        <!--            <groupId>io.github.digitalgust</groupId>-->
-        <!--            <artifactId>xgui</artifactId>-->
-        <!--            <version>1.1.14</version>-->
+        <!--            <groupId>org.minijvm</groupId>-->
+        <!--            <artifactId>minijvm_rt</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--            <scope>system</scope>-->
+        <!--            <systemPath>${basedir}/../miniJVM/binary/lib/minijvm_rt.jar</systemPath>-->
         <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.minijvm</groupId>-->
+        <!--            <artifactId>glfw_gui</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--            <scope>system</scope>-->
+        <!--            <systemPath>${basedir}/../miniJVM/binary/libex/glfw_gui.jar</systemPath>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.minijvm</groupId>-->
+        <!--            <artifactId>glfm_gui</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--            <scope>system</scope>-->
+        <!--            <systemPath>${basedir}/../miniJVM/mobile/assets/resfiles/glfm_gui.jar</systemPath>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.minijvm</groupId>-->
+        <!--            <artifactId>xgui</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--            <scope>system</scope>-->
+        <!--            <systemPath>${basedir}/../miniJVM/binary/libex/xgui.jar</systemPath>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>io.github.digitalgust</groupId>
+            <artifactId>xgui</artifactId>
+            <version>1.1.16</version>
+        </dependency>
         <dependency>
             <groupId>org.recompile</groupId>
             <artifactId>freej2me</artifactId>
