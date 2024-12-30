@@ -27,15 +27,17 @@ public class Canvas extends Component {
     public void setParent(Container parent) {
         super.setParent(parent);
         setSize(parent.getWidth(), parent.getHeight());
-        if(bimg != null){
+        if (bimg != null) {
 
-        };
+        }
+        ;
     }
 
     @Override
     public void setSize(int w, int h) {
         super.setSize(w, h);
         getPeer().getParent().reAlign();
+        bimg = null;
     }
 
     @Override
