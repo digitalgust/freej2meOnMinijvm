@@ -41,7 +41,7 @@ class BufferedImageGraphics extends Graphics2D {
 
     }
 
-    public void fillRect(int x, int y, int w, int h) {
+    public synchronized void fillRect(int x, int y, int w, int h) {
         x += transX;
         y += transY;
         if (x + w < 0 || y + h < 0 || x > imgW || y > imgH) {
@@ -63,7 +63,7 @@ class BufferedImageGraphics extends Graphics2D {
         fillRect(x, y, width, height);
     }
 
-    public void fillArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
+    public synchronized void fillArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
         startAngle = ((startAngle % 360) + 360) % 360;
         arcAngle = arcAngle > 360 ? 360 : arcAngle;// range: 0-360
         arcAngle = arcAngle < -360 ? -360 : arcAngle;
@@ -93,7 +93,7 @@ class BufferedImageGraphics extends Graphics2D {
      * @param startAngle
      * @param arcAngle
      */
-    public void drawArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
+    public synchronized void drawArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
         startAngle = ((startAngle % 360) + 360) % 360;
         arcAngle = arcAngle > 360 ? 360 : arcAngle;// range: 0-360
         arcAngle = arcAngle < -360 ? -360 : arcAngle;
@@ -267,7 +267,7 @@ class BufferedImageGraphics extends Graphics2D {
 
         int pos = 0;
         for (int i = offset; i < end; i++) {
-            pos += font.getBitmapfont().drawChar(bimg, str.charAt(i), x + pos, y, curColor);
+            pos += font.getBitmapfont().drawChar(bimg, str.charAt(i), x + pos, y, curColor, clipX, clipY, clipW, clipH);
         }
     }
 
@@ -292,10 +292,10 @@ class BufferedImageGraphics extends Graphics2D {
         } else {//RIGHT
             x -= w;
         }
-        font.getBitmapfont().drawChar(bimg, character, x, y, curColor);
+        font.getBitmapfont().drawChar(bimg, character, x, y, curColor, clipX, clipY, clipW, clipH);
     }
 
-    public void drawChars(char[] data, int offset, int length, int x, int y, int anchor) {
+    public synchronized void drawChars(char[] data, int offset, int length, int x, int y, int anchor) {
         x += transX;
         y += transY;
         if (data == null) return;
@@ -325,7 +325,7 @@ class BufferedImageGraphics extends Graphics2D {
 
         int pos = 0;
         for (int i = offset; i < end; i++) {
-            pos += font.getBitmapfont().drawChar(bimg, data[i], x + pos, y, curColor);
+            pos += font.getBitmapfont().drawChar(bimg, data[i], x + pos, y, curColor, clipX, clipY, clipW, clipH);
         }
     }
 
@@ -357,7 +357,7 @@ class BufferedImageGraphics extends Graphics2D {
      * @param y
      * @param n
      */
-    public void fillPolygon(int[] x, int[] y, int n) {
+    public synchronized void fillPolygon(int[] x, int[] y, int n) {
         int i;
         int ymin = y[0];
         int ymax = y[0];
@@ -572,7 +572,7 @@ class BufferedImageGraphics extends Graphics2D {
      * @param height
      * @param processAlpha
      */
-    public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha) {
+    public synchronized void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha) {
         //img.setPix(rgbData, offset, scanlength, 0, 0, width, height);
         throw new RuntimeException("not implementation yet.");
     }
@@ -596,7 +596,7 @@ class BufferedImageGraphics extends Graphics2D {
         throw new RuntimeException("not implementation yet.");
     }
 
-    public void translate(int x, int y) {
+    public synchronized void translate(int x, int y) {
         transX += x;
         transY += y;
         getTransform().translate(x, y);
@@ -610,7 +610,7 @@ class BufferedImageGraphics extends Graphics2D {
         return transY;
     }
 
-    public void clipRect(int x, int y, int w, int h) {
+    public synchronized void clipRect(int x, int y, int w, int h) {
         if ((w <= 0) || (h <= 0)) {
             clipW = clipH = 0;
             return;
@@ -644,7 +644,7 @@ class BufferedImageGraphics extends Graphics2D {
 
     }
 
-    public void setClip(int x, int y, int w, int h) {
+    public synchronized void setClip(int x, int y, int w, int h) {
         if ((w <= 0) || (h <= 0)) {
             clipX = clipY = clipW = clipH = 0;
             return;
@@ -698,8 +698,8 @@ class BufferedImageGraphics extends Graphics2D {
     }
 
     @Override
-    public boolean drawImage(Image img, AffineTransform transform,
-                             ImageObserver observer) {
+    public synchronized boolean drawImage(Image img, AffineTransform transform,
+                                          ImageObserver observer) {
         if (img instanceof BufferedImage) {
             BufferedImage cimg = ((BufferedImage) img);
             int srcW = cimg.getWidth();
@@ -736,8 +736,8 @@ class BufferedImageGraphics extends Graphics2D {
     }
 
     @Override
-    public boolean drawImage(Image img, int x, int y, int width, int height,
-                             ImageObserver observer) {
+    public synchronized boolean drawImage(Image img, int x, int y, int width, int height,
+                                          ImageObserver observer) {
         if (img instanceof BufferedImage) {
             BufferedImage cimg = ((BufferedImage) img);
             AffineTransform af = transform.get();
@@ -749,16 +749,16 @@ class BufferedImageGraphics extends Graphics2D {
         return true;
     }
 
-    public boolean drawImage(Image img,
-                             int dx1,
-                             int dy1,
-                             int dx2,
-                             int dy2,
-                             int sx1,
-                             int sy1,
-                             int sx2,
-                             int sy2,
-                             ImageObserver observer) {
+    public synchronized boolean drawImage(Image img,
+                                          int dx1,
+                                          int dy1,
+                                          int dx2,
+                                          int dy2,
+                                          int sx1,
+                                          int sy1,
+                                          int sx2,
+                                          int sy2,
+                                          ImageObserver observer) {
         if (img instanceof BufferedImage) {
             BufferedImage cimg = ((BufferedImage) img);
             int srcW = cimg.getWidth();

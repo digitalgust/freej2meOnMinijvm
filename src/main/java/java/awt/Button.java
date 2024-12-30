@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import static java.awt.event.ActionEvent.ACTION_PERFORMED;
 
 public class Button extends Component {
+    java.util.List<ActionListener> actionListeners = new java.util.ArrayList<>();
 
     public Button() {
         this("");
@@ -26,11 +27,22 @@ public class Button extends Component {
         if (l == null) {
             return;
         }
+        actionListeners.add(l);
         ((GButton) getPeer()).setActionListener(new GActionListener() {
             @Override
             public void action(GObject gobj) {
-                l.actionPerformed(new ActionEvent(Button.this, ACTION_PERFORMED, getPeer().getText()));
+                ActionEvent e = new ActionEvent(Button.this, ACTION_PERFORMED, getPeer().getText());
+                for (ActionListener listener : actionListeners) {
+                    listener.actionPerformed(e);
+                }
             }
         });
+    }
+
+    public synchronized void removeActionListener(ActionListener l) {
+        if (l == null) {
+            return;
+        }
+        ((GButton) getPeer()).setActionListener(null);
     }
 }

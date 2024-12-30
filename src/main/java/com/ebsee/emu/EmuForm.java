@@ -444,6 +444,22 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     }
 
+    @Override
+    public boolean dragEvent(int button, float dx, float dy, float x, float y) {
+        GFrame curFrame = findJ2meFrame(0, 0);
+        if (curFrame.getAttachment() instanceof Frame) {
+            AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseMotionListeners().forEach(mouseListener -> {
+                if (f.getPeer().isInArea(x, y)) {
+                    MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_DRAGGED, System.currentTimeMillis(), 0,
+                            (int) x, (int) y, (int) x, (int) y,
+                            1, false, MouseEvent.BUTTON1);
+                    mouseListener.mouseDragged(mouseEvent);
+                }
+            }));
+        }
+        return super.dragEvent(button, dx, dy, x, y);
+    }
+
     public GFrame getCurFrame() {
         return findJ2meFrame(0, 0);
     }

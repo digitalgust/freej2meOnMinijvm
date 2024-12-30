@@ -104,11 +104,31 @@ public class BitmapFont {
      * @param x
      * @param y
      */
-    public int drawChar(BufferedImage canvas, char ch, int x, int y, int rgb) {
+    public int drawChar(BufferedImage canvas, char ch, int x, int y, int rgb, int clipX, int clipY, int clipW, int clipH) {
 
         short[] chinfo = findCharInfo(ch);
         if (chinfo != null) {
             y += 4;//fix freej2me draw error
+
+            int cx = x + chinfo[ARR_XOFFSET];
+            int cy = y + chinfo[ARR_YOFFSET];
+            int cw = chinfo[ARR_W];
+            int chh = chinfo[ARR_H];
+
+            int tx1 = cx;
+            int ty1 = cy;
+            int rx1 = clipX;
+            int ry1 = clipY;
+            int tx2 = tx1 + cw;
+            int ty2 = ty1 + chh;
+            int rx2 = rx1 + clipW;
+            int ry2 = ry1 + clipH;
+            if (tx1 < rx1) tx1 = rx1;
+            if (ty1 < ry1) ty1 = ry1;
+            if (tx2 > rx2) tx2 = rx2;
+            if (ty2 > ry2) ty2 = ry2;
+            tx2 -= tx1;
+            ty2 -= ty1;
 
 //    static public native int img_draw(byte[] imgCanvas, int canvasWidth,
 //                                      byte[] img, int imgWidth,
@@ -119,7 +139,8 @@ public class BitmapFont {
 
             GLMath.img_draw(canvas.getData().array(), canvas.getWidth(),
                     fontShap.getData().array(), fontShap.getWidth(),
-                    x + chinfo[ARR_XOFFSET], y + chinfo[ARR_YOFFSET], chinfo[ARR_W], chinfo[ARR_H],
+                    tx1, ty1, tx2, ty2,
+//                    x + chinfo[ARR_XOFFSET], y + chinfo[ARR_YOFFSET], chinfo[ARR_W], chinfo[ARR_H],
                     1.0f, 0.0f, -(chinfo[ARR_X] - x) + chinfo[ARR_XOFFSET], 0.0f, 1.0f, -(chinfo[ARR_Y] - y) + chinfo[ARR_YOFFSET],
                     1.0f,
                     true, rgb

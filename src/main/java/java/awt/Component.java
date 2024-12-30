@@ -21,6 +21,7 @@ public class Component implements ImageObserver, MenuContainer,
     java.util.List<ComponentListener> compListeners = new ArrayList<>();
     java.util.List<KeyListener> keyListeners = new ArrayList<>();
     java.util.List<MouseListener> mouseListeners = new ArrayList<>();
+    java.util.List<MouseMotionListener> mouseMotionListeners = new ArrayList<>();
 
 
     public GObject getPeer() {
@@ -144,6 +145,10 @@ public class Component implements ImageObserver, MenuContainer,
 
     }
 
+    public synchronized void removeKeyListener(KeyListener l) {
+        keyListeners.remove(l);
+    }
+
     public synchronized void addMouseListener(MouseListener l) {
         mouseListeners.add(l);
     }
@@ -153,8 +158,20 @@ public class Component implements ImageObserver, MenuContainer,
     }
 
 
-    public synchronized void addMouseMotionListener(MouseMotionListener l) {
+    public List<MouseMotionListener> getMouseMotionListeners() {
+        return mouseMotionListeners;
+    }
 
+    public synchronized void addMouseMotionListener(MouseMotionListener l) {
+        mouseMotionListeners.add(l);
+    }
+
+    public synchronized void removeMouseListener(MouseListener l) {
+        mouseListeners.remove(l);
+    }
+
+    public synchronized void removeMouseMotionListener(MouseMotionListener l) {
+        mouseMotionListeners.remove(l);
     }
 
     public synchronized void addComponentListener(ComponentListener l) {
