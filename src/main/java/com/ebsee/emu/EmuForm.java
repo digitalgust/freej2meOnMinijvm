@@ -322,10 +322,19 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     GFrame findJ2meFrame(int x, int y) {
         GForm gForm = app.getForm();
+        GObject go = gForm.getCurrent();
+        if (go != null && go.getFrame() != null) {
+            if ("J2ME_INPUT_FRAME".equals(go.getFrame().getName())) {
+                return null;
+            }
+        }
         for (int i = gForm.getElements().size() - 1; i >= 0; i--) {
             GObject gobj = gForm.getElements().get(i);
             if (gobj instanceof GFrame) {
                 GFrame curFrame = (GFrame) gobj;
+                if ("J2ME_INPUT_FRAME".equals(curFrame.getName())) {
+                    return null;
+                }
                 return curFrame;
             }
         }
@@ -369,8 +378,7 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     @Override
     public void mouseButtonEvent(int button, boolean pressed, int x, int y) {
-        super.mouseButtonEvent(button, pressed, x, y);
-        GFrame curFrame = findJ2meFrame(0, 0);
+        GFrame curFrame = findJ2meFrame(x, y);
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (pressed) {
                 if (f.getPeer().isInArea(x, y)) {
@@ -388,12 +396,12 @@ public class EmuForm extends GForm implements GChildrenListener {
                 }
             }
         }));
+        super.mouseButtonEvent(button, pressed, x, y);
     }
 
     @Override
     public void touchEvent(int touchid, int phase, int x, int y) {
-        super.touchEvent(touchid, phase, x, y);
-        GFrame curFrame = findJ2meFrame(0, 0);
+        GFrame curFrame = findJ2meFrame(x, y);
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (phase == Glfm.GLFMTouchPhaseBegan) {
                 if (f.getPeer().isInArea(x, y)) {
@@ -411,6 +419,7 @@ public class EmuForm extends GForm implements GChildrenListener {
                 }
             }
         }));
+        super.touchEvent(touchid, phase, x, y);
     }
 
     @Override
@@ -446,8 +455,8 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     @Override
     public boolean dragEvent(int button, float dx, float dy, float x, float y) {
-        GFrame curFrame = findJ2meFrame(0, 0);
-        if (curFrame.getAttachment() instanceof Frame) {
+        GFrame curFrame = findJ2meFrame((int) x, (int) y);
+        if (curFrame != null && curFrame.getAttachment() instanceof Frame) {
             AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseMotionListeners().forEach(mouseListener -> {
                 if (f.getPeer().isInArea(x, y)) {
                     MouseEvent mouseEvent = new MouseEvent(f, MouseEvent.MOUSE_DRAGGED, System.currentTimeMillis(), 0,

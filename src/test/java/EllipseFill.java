@@ -10,8 +10,8 @@ public class EllipseFill extends JPanel {
         int d1 = b * b - a * a * b + a * a / 4;
         int dx = 2 * b * b * x;
         int dy = 2 * a * a * y;
+        g.setColor(Color.black);
         while (dx < dy) {
-            g.setColor(Color.black);
             g.fillRect(x0 + x, y0 + y, 1, 1);
             g.fillRect(x0 - x, y0 + y, 1, 1);
             g.fillRect(x0 + x, y0 - y, 1, 1);
@@ -29,8 +29,8 @@ public class EllipseFill extends JPanel {
             }
         }
         int d2 = (int) (b * b * (x + 0.5) * (x + 0.5) + a * a * (y - 1) * (y - 1) - a * a * b * b);
+        g.setColor(Color.black);
         while (y >= 0) {
-            g.setColor(Color.black);
             g.fillRect(x0 + x, y0 + y, 1, 1);
             g.fillRect(x0 - x, y0 + y, 1, 1);
             g.fillRect(x0 + x, y0 - y, 1, 1);
@@ -48,15 +48,15 @@ public class EllipseFill extends JPanel {
             }
         }
 
-        g.fillArc(100, 150, 80, 40, 90, 315);
-        g.setColor(Color.pink);
-        g.drawArc(100, 150, 80, 40, 90, 315);
+//        g.fillArc(100, 150, 180, 90, 90, 315);
+//        g.setColor(Color.pink);
+//        g.drawArc(100, 150, 180, 90, 0, 315);
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame();
         frame.getContentPane().add(new EllipseFill());
-        frame.setSize(300,400);
+        frame.setSize(300, 400);
         frame.setVisible(true);
     }
 }

@@ -15,6 +15,8 @@ import java.util.List;
 
 public class Component implements ImageObserver, MenuContainer,
         Serializable {
+
+    private String name;
     private transient GObject peer;
     Graphics gGraphics;
     private Container parent;
@@ -196,6 +198,17 @@ public class Component implements ImageObserver, MenuContainer,
         GContainer p = peer.getParent();
         if (p != null) {
             peer.getParent().setCurrent(peer);
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+        if(peer!=null){
+            peer.setName(name);
         }
     }
 }
