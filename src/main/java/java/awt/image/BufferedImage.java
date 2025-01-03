@@ -144,41 +144,15 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
         }
 
         //this method is rgba format
-//        if (w <= 0 || h <= 0) return;
-//        if (startX < 0) startX = 0;
-//        if (startY < 0) startY = 0;
-//
-//        long canvasAddr = ReflectArray.getBodyPtr(gimg.getData().array());
-//        int imgW = gimg.getWidth();
-//        int imgH = gimg.getHeight();
-//
-//        long rgbAddr = ReflectArray.getBodyPtr(argbArray);
-//        int rgbY = offset / scanlength;
-//        int rgbX = offset % scanlength;
-//        int rgbW = scanlength;
-//        int rgbH = argbArray.length / scanlength;
-//
-//        if (startX + w > imgW) {
-//            w = imgW - startX;
-//        }
-//        if (rgbX + w > rgbW) {
-//            w = rgbW - rgbX;
-//        }
-//        if (startY + h > imgH) {
-//            h = imgH - startY;
-//        }
-//        if (rgbY + h > rgbH) {
-//            h = rgbH - rgbY;
-//        }
-//
-//        for (int y = startY, ymax = startY + h; y < ymax; y++) {
-//            RefNative.heap_copy(rgbAddr, (y * rgbW + rgbX) * BYTE_PER_PIXEL,
-//                    canvasAddr, (y * imgW + startX) * BYTE_PER_PIXEL, w * BYTE_PER_PIXEL);
-//        }
     }
 
     public void setRGB(int startX, int startY, int c) {
-        gimg.setPix(startY, startX, c | (0xff << 24));
+        //argb ->abgr
+        int nc = (0xff000000 & c);//a
+        nc |= (c >> 16) & 0xff;//r
+        nc |= (c) & 0x0000ff00;//g
+        nc |= (c & 0xff) << 16;//b
+        gimg.setPix(startY, startX, nc);
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {

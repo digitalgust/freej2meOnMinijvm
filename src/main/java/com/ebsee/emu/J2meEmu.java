@@ -83,6 +83,7 @@ public class J2meEmu extends GApplication {
                     args[0] = "file:" + f.getAbsolutePath();
                     args[1] = getRmsRoot();
                     main(args);
+                    gobj.flushNow();
                 },
                 gobj -> {
                     //closeApp();

@@ -11,14 +11,19 @@ class BufferedImageGraphics extends Graphics2D {
 
     //draw image
     BufferedImage bimg;
-    byte[] bimgArr;
     int imgW, imgH;
 
-    ThreadLocal<AffineTransform> transform = new ThreadLocal() {
+    static ThreadLocal<AffineTransform> transform = new ThreadLocal() {
         protected AffineTransform initialValue() {
             return new AffineTransform();
         }
     };
+    static ThreadLocal<java.awt.Point> tmpPoint = new ThreadLocal() {
+        protected Point initialValue() {
+            return new java.awt.Point();
+        }
+    };
+    IntList drawLinePoints = new IntList();
     private int transX, transY;
 
 
@@ -29,7 +34,6 @@ class BufferedImageGraphics extends Graphics2D {
     public BufferedImageGraphics(BufferedImage bimg) {
         super(null, 0);
         this.bimg = bimg;
-        bimgArr = bimg.getData().array();
         imgW = bimg.getWidth();
         imgH = bimg.getHeight();
         setClip(0, 0, imgW, imgH);
@@ -55,7 +59,7 @@ class BufferedImageGraphics extends Graphics2D {
         int ch = cy2 - cy1;
 
         for (int i = cy1; i < cy2; i++) {
-            GLMath.img_fill(bimgArr, cx1 + i * imgW, cw, curColor);
+            GLMath.img_fill(bimg.getData().array(), cx1 + i * imgW, cw, curColor);
         }
     }
 
@@ -123,8 +127,8 @@ class BufferedImageGraphics extends Graphics2D {
         int d1 = b * b - a * a * b + a * a / 4;
         int dx = 2 * b * b * x;
         int dy = 2 * a * a * y;
-        double startRadian = Math.toRadians(startAngle);// 起始角度
-        double endRadian = Math.toRadians(endAngle); // 终止角度
+        float startRadian = (float) Math.toRadians(startAngle);// 起始角度
+        float endRadian = (float) Math.toRadians(endAngle); // 终止角度
         while (dx < dy) {
             drawPixImpl(x0, y0, x, y, startRadian, endRadian, fill);
             if (d1 < 0) {
@@ -157,21 +161,21 @@ class BufferedImageGraphics extends Graphics2D {
         }
     }
 
-    private void drawPixImpl(int x0, int y0, int x, int y, double startRadian, double endRadian, boolean fill) {
-        double radian;
-        radian = Math.atan2(y, x);
+    private void drawPixImpl(int x0, int y0, int x, int y, float startRadian, float endRadian, boolean fill) {
+        float radian;
+        radian = (float) Math.atan2(y, x);
         if (radian >= startRadian && radian <= endRadian) {
             drawLine(x0 + x, y0 - y, fill ? x0 : (x0 + x), fill ? y0 : (y0 - y));
         }
-        radian = Math.atan2(y, -x);
+        radian = (float) Math.atan2(y, -x);
         if (radian >= startRadian && radian <= endRadian) {
             drawLine(x0 - x, y0 - y, fill ? x0 : (x0 - x), fill ? y0 : (y0 - y));
         }
-        radian = Math.atan2(-y, x) + Math.PI * 2;
+        radian = (float) (Math.atan2(-y, x) + Math.PI * 2);
         if (radian >= startRadian && radian <= endRadian) {
             drawLine(x0 + x, y0 + y, fill ? x0 : (x0 + x), fill ? y0 : (y0 + y));
         }
-        radian = Math.atan2(-y, -x) + Math.PI * 2;
+        radian = (float) (Math.atan2(-y, -x) + Math.PI * 2);
         if (radian >= startRadian && radian <= endRadian) {
             drawLine(x0 - x, y0 + y, fill ? x0 : (x0 - x), fill ? y0 : (y0 + y));
         }
@@ -182,6 +186,61 @@ class BufferedImageGraphics extends Graphics2D {
         y1 += transY;
         x2 += transX;
         y2 += transY;
+
+        if (y1 == y2) {
+            if (y1 < 0 || y1 >= imgH) {
+                return;
+            }
+        }
+        if (x1 == x2) {
+            if (x1 < 0 || x1 >= imgW) {
+                return;
+            }
+        }
+
+        //如果坐标在屏幕外，则优化坐标
+        if (x1 < 0 || y1 < 0 || x1 > imgW || y1 > imgH || x2 < 0 || y2 < 0 || x2 > imgW || y2 > imgH) {
+
+            drawLinePoints.clear();//缓存相交的两点
+            // 计算直线与边的交点  , left
+            Point intersection;
+            intersection = getLineIntersection(x1, y1, x2, y2, 0, 0, 0, imgH);
+            // 如果交点存在且在边的范围内，则添加到交点列表
+            if (intersection != null) {
+                drawLinePoints.add(intersection.x);
+                drawLinePoints.add(intersection.y);
+            }
+            // 计算直线与边的交点 , top
+            intersection = getLineIntersection(x1, y1, x2, y2, 0, 0, imgW, 0);
+            // 如果交点存在且在边的范围内，则添加到交点列表
+            if (intersection != null) {
+                drawLinePoints.add(intersection.x);
+                drawLinePoints.add(intersection.y);
+            }
+            // 计算直线与边的交点 , bottom
+            intersection = getLineIntersection(x1, y1, x2, y2, 0, imgH, imgW, imgH);
+            // 如果交点存在且在边的范围内，则添加到交点列表
+            if (intersection != null) {
+                drawLinePoints.add(intersection.x);
+                drawLinePoints.add(intersection.y);
+            }
+            // 计算直线与边的交点 ,righ
+            intersection = getLineIntersection(x1, y1, x2, y2, imgW, 0, imgW, imgH);
+            // 如果交点存在且在边的范围内，则添加到交点列表
+            if (intersection != null) {
+                drawLinePoints.add(intersection.x);
+                drawLinePoints.add(intersection.y);
+            }
+
+            if (drawLinePoints.size() >= 4) {
+                x1 = drawLinePoints.get(0);
+                y1 = drawLinePoints.get(1);
+                x2 = drawLinePoints.get(2);
+                y2 = drawLinePoints.get(3);
+            } else {
+                return;
+            }
+        }
 
         int dy = Math.abs(y2 - y1);
         int dx = Math.abs(x2 - x1);
@@ -200,7 +259,7 @@ class BufferedImageGraphics extends Graphics2D {
                 if (i < clipX || i > cx2) continue;
                 int ty = x2 == x1 ? y1 : (y1 + ((y2 - y1) * (i - x1) / (x2 - x1)));
                 if (ty < clipY || ty > cy2) continue;
-                GLMath.img_fill(bimgArr, ty * imgW + i, 1, curColor);
+                GLMath.img_fill(bimg.getData().array(), ty * imgW + i, 1, curColor);
             }
         } else {
             if (y1 > y2) {
@@ -215,10 +274,62 @@ class BufferedImageGraphics extends Graphics2D {
                 if (i < clipY || i > cy2) continue;
                 int tx = y2 == y1 ? x1 : (x1 + ((x2 - x1) * (i - y1) / (y2 - y1)));
                 if (tx < clipX || tx > cx2) continue;
-                GLMath.img_fill(bimgArr, i * imgW + tx, 1, curColor);
+                GLMath.img_fill(bimg.getData().array(), i * imgW + tx, 1, curColor);
             }
         }
     }
+
+
+    /**
+     * 计算两条直线的交点。
+     *
+     * @param x1 第一条直线起点 x 坐标
+     * @param y1 第一条直线起点 y 坐标
+     * @param x2 第一条直线终点 x 坐标
+     * @param y2 第一条直线终点 y 坐标
+     * @param x3 第二条直线起点 x 坐标
+     * @param y3 第二条直线起点 y 坐标
+     * @param x4 第二条直线终点 x 坐标
+     * @param y4 第二条直线终点 y 坐标
+     * @return 交点坐标，如果两条直线平行则返回 null
+     */
+    private static Point getLineIntersection(float x1, float y1, float x2, float y2,
+                                             float x3, float y3, float x4, float y4) {
+        // 快速排斥实验 首先判断两条线段在 x 以及 y 坐标的投影是否有重合。 有一个为真，则代表两线段必不可交。
+        if (Math.max(x1, x2) < Math.min(x3, x4)
+                || Math.max(y1, y2) < Math.min(y3, y4)
+                || Math.max(x3, x4) < Math.min(x1, x2)
+                || Math.max(y3, y4) < Math.min(y1, y2)) {
+            return null;
+        }
+
+        float A1 = y1 - y2;
+        float B1 = x2 - x1;
+        float C1 = A1 * x1 + B1 * y1;
+
+        float A2 = y3 - y4;
+        float B2 = x4 - x3;
+        float C2 = A2 * x3 + B2 * y3;
+
+        float det_k = A1 * B2 - A2 * B1;
+
+        if (Math.abs(det_k) < 0.00001) {
+            return null;
+        }
+
+        float a = B2 / det_k;
+        float b = -1 * B1 / det_k;
+        float c = -1 * A2 / det_k;
+        float d = A1 / det_k;
+
+        float x = a * C1 + b * C2;
+        float y = c * C1 + d * C2;
+
+        tmpPoint.get().setLocation((int) x, (int) y);
+        return tmpPoint.get();
+
+    }
+
 
     public void drawRect(int x, int y, int w, int h) {
         drawLine(x, y, x + w, y);

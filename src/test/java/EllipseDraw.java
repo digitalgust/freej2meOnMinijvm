@@ -56,11 +56,42 @@ public class EllipseDraw extends JPanel {
             }
         }
     }
+    public static void zoomLine() {
+        // 原始坐标系的范围
+        int x_min = Integer.MIN_VALUE;
+        int y_min = Integer.MIN_VALUE;
+        int x_max = Integer.MAX_VALUE;
+        int y_max = Integer.MAX_VALUE;
 
+        // 屏幕坐标系的范围
+        int screen_width = 240;
+        int screen_height = 320;
+
+        // 原始坐标系中的点
+        int x1 = 9310;
+        int y1 = -1805;
+        int x2 = 22932;
+        int y2 = -2805;
+
+        // 计算缩放比例
+        double sx = (double) screen_width / (x_max - x_min);
+        double sy = (double) screen_height / (y_max - y_min);
+
+        // 转换到屏幕坐标系
+        int nx1 = (int) (sx * (x1 - x_min));
+        int ny1 = (int) (sy * (y_max - y1));
+        int nx2 = (int) (sx * (x2 - x_min));
+        int ny2 = (int) (sy * (y_max - y2));
+
+        // 输出结果
+        System.out.println("转换后的点1坐标: (" + nx1 + ", " + ny1 + ")");
+        System.out.println("转换后的点2坐标: (" + nx2 + ", " + ny2 + ")");
+    }
     public static void main(String[] args) {
-        JFrame frame = new JFrame();
-        frame.getContentPane().add(new EllipseDraw());
-        frame.setSize(300, 300);
-        frame.setVisible(true);
+        zoomLine();
+//        JFrame frame = new JFrame();
+//        frame.getContentPane().add(new EllipseDraw());
+//        frame.setSize(300, 300);
+//        frame.setVisible(true);
     }
 }

@@ -42,6 +42,7 @@ public class Window extends Container {
         GForm gform = GCallBack.getInstance().getApplication().getForm();
         gform.add(this.getPeer());
         gform.setCurrent(this.getPeer());
+        gform.flushNow();
     }
 
     @Override
@@ -54,10 +55,12 @@ public class Window extends Container {
             go.setSize(w, h);
         }
         dispathComponentEvent();
+        peer.flushNow();
     }
 
     public void pack() {
         getPeer().setLocation((getPeer().getForm().getW() - getPeer().getW()) * .5f, (getPeer().getForm().getH() - getPeer().getH()) * .5f);
+        getPeer().flushNow();
     }
 
     public void dispose() {

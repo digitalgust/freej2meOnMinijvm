@@ -1,6 +1,5 @@
 package com.ebsee.emu;
 
-import org.mini.apploader.AppLoader;
 import org.mini.glfm.Glfm;
 import org.mini.glfw.Glfw;
 import org.mini.gui.*;
@@ -9,7 +8,6 @@ import org.mini.gui.event.GChildrenListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.Properties;
 import java.util.function.Predicate;
 
 public class EmuForm extends GForm implements GChildrenListener {
@@ -338,24 +336,6 @@ public class EmuForm extends GForm implements GChildrenListener {
                 return curFrame;
             }
         }
-//        GObject gobj = app.getForm().findByXY(x, y);
-//        if (gobj != null) {
-//            GFrame frame = gobj.getFrame();
-//            if (frame != null && frame.getAttachment() instanceof Frame) {
-//                curFrame = frame;
-//                return frame;
-//            }
-//        }
-//        if (curFrame == null) {
-//            for (GObject go : gForm.getElements()) {
-//                if (go instanceof GFrame) {
-//                    if (go.getAttachment() instanceof Frame) {
-//                        curFrame = (GFrame) go;
-//                        return curFrame;
-//                    }
-//                }
-//            }
-//        }
         return null;
     }
 
@@ -427,11 +407,6 @@ public class EmuForm extends GForm implements GChildrenListener {
         if (child instanceof GFrame) {
             GFrame frame = (GFrame) child;
             frame.setLocationChangeListener((oldLeft, oldTop, newLeft, newTop) -> {
-//                if (getW() > getH()) {//横向
-//                    child.setLocation(getW() / 2 - child.getW() / 2, 0);
-//                } else {
-//                    child.setLocation(getW() / 2 - child.getW() / 2, 0);
-//                }
                 if (child.getAttachment() instanceof Frame) {
                     app.setProperty("frame.location.x", String.format("%f", child.getLocationLeft()));
                     app.setProperty("frame.location.y", String.format("%f", child.getLocationTop()));
@@ -446,6 +421,7 @@ public class EmuForm extends GForm implements GChildrenListener {
                 e.printStackTrace();
             }
         }
+        child.flushNow();
     }
 
     @Override
