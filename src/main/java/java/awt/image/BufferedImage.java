@@ -160,9 +160,7 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
         nc |= (c >> 16) & 0xff;//r
         nc |= (c) & 0x0000ff00;//g
         nc |= (c & 0xff) << 16;//b
-        synchronized (gimg) {
-            gimg.setPix(startY, startX, nc);
-        }
+        gimg.setPix(startY, startX, nc);
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {
