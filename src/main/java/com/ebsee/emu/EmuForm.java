@@ -54,19 +54,26 @@ public class EmuForm extends GForm implements GChildrenListener {
     public void addButtons() {
         GForm form = getForm();
 
-        GButton exitbut = new GButton(getForm(), "", 0, 30, 40f, 25f);
+        double[] inset = new double[4];//top,right,bottom,left
+        Glfm.glfmGetDisplayChromeInsets(GCallBack.getInstance().getDisplay(), inset);
+        float leftSpace = (float) inset[3] / GCallBack.getInstance().getDeviceRatio();
+        float rightSpace = (float) inset[1] / GCallBack.getInstance().getDeviceRatio();
+        float bottomSpace = (float) inset[2] / GCallBack.getInstance().getDeviceRatio();
+        float topSpace = (float) inset[0] / GCallBack.getInstance().getDeviceRatio();
+
+        GButton exitbut = new GButton(getForm(), "", leftSpace, 30, 40f, 25f);
         form.add(exitbut);
         exitbut.setPreIcon("\uE741");
         exitbut.setActionListener(gObject -> {
             app.closeApp();
         });
-        GButton open = new GButton(getForm(), "", 0, 60, 40f, 25f);
+        GButton open = new GButton(getForm(), "", leftSpace, 60, 40f, 25f);
         form.add(open);
         open.setPreIcon("\uD83D\uDCC1");
         open.setActionListener(gObject -> {
             app.openFileChooser();
         });
-        GButton orientation = new GButton(getForm(), "", getW() - 40, 30, 40f, 25f);
+        GButton orientation = new GButton(getForm(), "", getW() - 40 - rightSpace, 30, 40f, 25f);
         form.add(orientation);
         orientation.setPreIcon("\uE717");
         orientation.setActionListener(gObject -> {
@@ -77,7 +84,7 @@ public class EmuForm extends GForm implements GChildrenListener {
             }
             Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
         });
-        GButton esc = new GButton(getForm(), "", getW() - 40, 60, 40f, 25f);
+        GButton esc = new GButton(getForm(), "", getW() - 40 - rightSpace, 60, 40f, 25f);
         form.add(esc);
         esc.setPreIcon("\uE005");
         esc.setStateChangeListener(gObject -> {
@@ -86,7 +93,7 @@ public class EmuForm extends GForm implements GChildrenListener {
 
         //navi
         final float dw = 240f;
-        float leftPos = getW() > getH() ? 10f : 2f;
+        float leftPos = getW() > getH() ? (10f + leftSpace) : (2f + leftSpace);
         float butW = 48f;
         float butH = butW;
         float dx = leftPos + butW;
@@ -158,7 +165,7 @@ public class EmuForm extends GForm implements GChildrenListener {
         butH = 35f;
         float spacingX = getW() > getH() ? 6f : 2;
         float spacingY = 6f;
-        dx = getW() - (butW + spacingX) * 3f;
+        dx = getW() - (butW + spacingX) * 3f - rightSpace;
         dy = getH() - dw;
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 3; col++) {
@@ -176,7 +183,7 @@ public class EmuForm extends GForm implements GChildrenListener {
         }
 
         //OK
-        dx = getW() - (butW + spacingX) * 2f;
+        dx = getW() - (butW + spacingX) * 2f - rightSpace;
         dy = dy + 4 * (spacingY + butH);
         GButton ok = new GButton(getForm(), "OK", dx, dy, butW, butH);
         form.add(ok);
