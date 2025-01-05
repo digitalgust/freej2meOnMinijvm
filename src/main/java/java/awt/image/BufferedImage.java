@@ -135,24 +135,34 @@ public class BufferedImage extends java.awt.Image implements WritableRenderedIma
     public void setRGB(int startX, int startY, int w, int h, int[] argbArray, int offset, int scanlength) {
 
         int imgW = gimg.getWidth();
-
-        for (int y = startY, ymax = startY + h; y < ymax; y++) {
-            for (int x = startX, xmax = startX + w; x < xmax; x++) {
-                int pixel = argbArray[offset + (y - startY) * scanlength + (x - startX)];
-                GLMath.img_fill(getData().array(), y * imgW + x, 1, pixel);
+        synchronized (gimg) {
+            for (int y = startY, ymax = startY + h; y < ymax; y++) {
+                for (int x = startX, xmax = startX + w; x < xmax; x++) {
+                    int pixel = argbArray[offset + (y - startY) * scanlength + (x - startX)];
+                    GLMath.img_fill(getData().array(), y * imgW + x, 1, pixel);
+                }
             }
         }
 
         //this method is rgba format
     }
 
+    /**
+     * set argb
+     *
+     * @param startX
+     * @param startY
+     * @param c
+     */
     public void setRGB(int startX, int startY, int c) {
         //argb ->abgr
         int nc = (0xff000000 & c);//a
         nc |= (c >> 16) & 0xff;//r
         nc |= (c) & 0x0000ff00;//g
         nc |= (c & 0xff) << 16;//b
-        gimg.setPix(startY, startX, nc);
+        synchronized (gimg) {
+            gimg.setPix(startY, startX, nc);
+        }
     }
 
     public int[] getRGB(int x, int y, int width, int height, int[] pixels, int offset, int scanlength) {
