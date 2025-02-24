@@ -3,6 +3,7 @@ package com.ebsee.emu;
 import org.mini.apploader.GApplication;
 import org.mini.glfm.Glfm;
 import org.mini.gui.*;
+import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GSizeChangeListener;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
@@ -76,7 +77,7 @@ public class J2meEmu extends GApplication {
                         return file.getName().endsWith(".jar") || file.isDirectory();
                     }
                 },
-                gform.getDeviceWidth() * .8f, gform.getDeviceHeight() * .8f,
+                GCallBack.getInstance().getDeviceWidth() * .8f, GCallBack.getInstance().getDeviceHeight() * .8f,
                 (gobj) -> {
                     String[] args = new String[2];
                     File f = gobj.getAttachment();

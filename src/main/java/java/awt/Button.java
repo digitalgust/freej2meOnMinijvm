@@ -1,7 +1,7 @@
 package java.awt;
 
 import org.mini.gui.GButton;
-import org.mini.gui.GCallBack;
+import org.mini.gui.callback.GCallBack;
 import org.mini.gui.GObject;
 import org.mini.gui.event.GActionListener;
 

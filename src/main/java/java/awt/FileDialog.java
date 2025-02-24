@@ -1,6 +1,7 @@
 package java.awt;
 
 import org.mini.gui.*;
+import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GActionListener;
 
 import java.io.File;
@@ -40,7 +41,7 @@ public class FileDialog extends Window {
                 if (file.isDirectory()) return true;
                 return filter.accept(file.getParentFile(), file.getName());
             }
-        }, gform.getDeviceWidth(), gform.getDeviceHeight(), new GActionListener() {
+        }, GCallBack.getInstance().getDeviceWidth(), GCallBack.getInstance().getDeviceHeight(), new GActionListener() {
             @Override
             public void action(GObject gObject) {
                 File f = gObject.getAttachment();

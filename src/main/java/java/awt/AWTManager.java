@@ -1,6 +1,6 @@
 package java.awt;
 
-import org.mini.gui.GCallBack;
+import org.mini.gui.callback.GCallBack;
 import org.mini.gui.GForm;
 import org.mini.gui.GFrame;
 import org.mini.gui.GObject;

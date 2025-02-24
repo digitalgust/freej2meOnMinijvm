@@ -1,7 +1,7 @@
 package java.awt.image;
 
 import org.mini.gl.GLMath;
-import org.mini.gui.GCallBack;
+import org.mini.gui.callback.GCallBack;
 
 import javax.imageio.ImageIO;
 import java.io.BufferedReader;

@@ -1,6 +1,7 @@
 package java.awt;
 
 import org.mini.gui.*;
+import org.mini.gui.callback.GCallBack;
 
 import java.awt.image.BufferedImage;
 

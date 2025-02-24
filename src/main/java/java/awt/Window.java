@@ -2,6 +2,7 @@ package java.awt;
 
 
 import org.mini.gui.*;
+import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GStateChangeListener;
 
 import java.awt.event.WindowEvent;
