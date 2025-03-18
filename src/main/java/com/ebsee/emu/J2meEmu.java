@@ -5,6 +5,7 @@ import org.mini.glfm.Glfm;
 import org.mini.gui.*;
 import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GSizeChangeListener;
+import org.mini.layout.loader.XuiAppHolder;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
@@ -12,7 +13,7 @@ import org.recompile.mobile.MobilePlatform;
 import java.io.File;
 import java.io.FileFilter;
 
-public class J2meEmu extends GApplication {
+public class J2meEmu extends GApplication implements XuiAppHolder {
 
 
     static J2meEmu mainApp;
@@ -27,29 +28,27 @@ public class J2meEmu extends GApplication {
     }
 
     @Override
-    public GForm getForm() {
-        if (gform == null) {
-            Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationPortrait);
-            Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
-            gform = new EmuForm(null, this);
-            gform.addButtons();
-            checkMidletHome();//检测midlet home目录在不在，不在就创建一个
-            openFileChooser();
-            gform.setSizeChangeListener(new GSizeChangeListener() {
-                @Override
-                public void onSizeChange(int i, int i1) {
-                    gform.removeAllButtons();
-                    gform.addButtons();
-                    GObject frame = gform.getCurFrame();
-                    if (frame != null) {
-                        frame.setLocation((gform.getW() - frame.getW()) * .5f, 30);
-                    }
-                }
-            });
-            gform.addChildrenListener(gform);
+    public void onInit() {
 
-        }
-        return gform;
+        Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationPortrait);
+        Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
+        gform = new EmuForm(this);
+        gform.addButtons();
+        checkMidletHome();//检测midlet home目录在不在，不在就创建一个
+        openFileChooser();
+        gform.setSizeChangeListener(new GSizeChangeListener() {
+            @Override
+            public void onSizeChange(int i, int i1) {
+                gform.removeAllButtons();
+                gform.addButtons();
+                GObject frame = gform.getCurFrame();
+                if (frame != null) {
+                    frame.setLocation((gform.getW() - frame.getW()) * .5f, 30);
+                }
+            }
+        });
+        gform.addChildrenListener(gform);
+
     }
 
     public String getRmsRoot() {
@@ -100,6 +99,15 @@ public class J2meEmu extends GApplication {
         FreeJ2ME app = new FreeJ2ME(args);
     }
 
+    @Override
+    public GApplication getApp() {
+        return this;
+    }
+
+    @Override
+    public GContainer getWebView() {
+        return null;
+    }
 }
 
 

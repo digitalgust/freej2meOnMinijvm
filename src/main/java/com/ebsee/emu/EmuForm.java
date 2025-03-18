@@ -34,8 +34,8 @@ public class EmuForm extends GForm implements GChildrenListener {
             '*', '0', '#',//
     };
 
-    public EmuForm(GForm form, J2meEmu app) {
-        super(form);
+    public EmuForm(J2meEmu app) {
+        super(app);
         this.app = app;
 
     }
