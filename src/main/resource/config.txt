@@ -1,7 +1,7 @@
-name=J2ME-EMU
+name=J2ME模拟器
 app=com.ebsee.emu.J2meEmu
 icon=/j2meemu.png
 orientation=v
 desc=J2ME Emulator.
-version=1.0.0
-upgradeurl=https://p.ysbit.cn/static/apps/j2meemu.jar
+version=1.0.0.10
+upgradeurl=http://down.ysbit.cn/static/apps/j2meemu.jar

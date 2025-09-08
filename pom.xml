@@ -69,7 +69,7 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <tasks>
+                            <target>
 
                                 <mkdir dir="${basedir}/../miniJVM/binary/win_x64/apps/"/>
                                 <copy todir="${basedir}/../miniJVM/binary/win_x64/apps/" overwrite="true">
@@ -84,8 +84,57 @@
                                 <!--                                        <include name="${project.artifactId}.jar"/>-->
                                 <!--                                    </fileset>-->
                                 <!--                                </copy>-->
-                            </tasks>
+                            </target>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>increment-version</id>
+                        <phase>initialize</phase> <!-- 在 Maven 生命周期的早期阶段执行 -->
+                        <configuration>
+                            <target>
+                                <script language="javascript">
+                                    <![CDATA[
+                            var file = new java.io.File("./src/main/resource/config.txt");
+                            var lines = [];
+                            // 使用UTF-8编码读取文件
+                            var input = new java.io.BufferedReader(new java.io.InputStreamReader(
+                                new java.io.FileInputStream(file), "UTF-8"));
+                            var line;
+                            while ((line = input.readLine()) != null) {
+                                if (line.startsWith("version=")) {
+                                    var version = line.substring(8); // 去掉 "version="
+                                    var parts = version.split(".");
+                                    if (parts.length === 4) {
+                                        var lastPart = parseInt(parts[3], 10) + 1;
+                                        line = "version=" + parts[0] + "." + parts[1] + "." + parts[2] + "." + lastPart;
+                                    }
+                                }
+                                lines.push(line);
+                            }
+                            input.close();
+
+                            // 使用UTF-8编码写入文件
+                            var output = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
+                                new java.io.FileOutputStream(file), "UTF-8"));
+                            for (var i in lines) {
+                                output.write(lines[i]);
+                                output.newLine();
+                            }
+                            output.close();
+                        ]]>
+                                </script>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

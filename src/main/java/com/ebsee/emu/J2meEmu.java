@@ -12,12 +12,14 @@ import org.recompile.mobile.MobilePlatform;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 
 public class J2meEmu extends GApplication implements XuiAppHolder {
 
 
     static J2meEmu mainApp;
     EmuForm gform;
+    static String[] midlets = {"pipes-game.jar", "rayman-game.jar"};
 
     public static J2meEmu getInstance() {
         return mainApp;
@@ -35,6 +37,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
         gform = new EmuForm(this);
         gform.addButtons();
         checkMidletHome();//检测midlet home目录在不在，不在就创建一个
+        copyFiles();
         openFileChooser();
         gform.setSizeChangeListener(new GSizeChangeListener() {
             @Override
@@ -49,6 +52,25 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
         });
         gform.addChildrenListener(gform);
 
+    }
+
+    void copyFiles() {
+        //复制res中的jars到midlethome中
+        for (int i = 0; i < midlets.length; i++) {
+            File f = new File(getMidlletHome() + "/" + midlets[i]);
+            if (!f.exists()) {
+                try {
+                    byte[] data = GToolkit.readFileFromJar("/" + midlets[i]);
+                    if (data != null) {
+                        FileOutputStream fos = new FileOutputStream(f);
+                        fos.write(data);
+                        fos.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public String getRmsRoot() {

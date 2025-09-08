@@ -87,7 +87,7 @@ public class EmuForm extends GForm implements GChildrenListener {
         });
         GButton esc = new GButton(getForm(), "", getW() - 40 - rightSpace, 60, 40f, 25f);
         form.add(esc);
-        esc.setPreIcon("\uE005");
+        esc.setPreIcon("☰");
         esc.setStateChangeListener(gObject -> {
             dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_ESCAPE, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
         });
