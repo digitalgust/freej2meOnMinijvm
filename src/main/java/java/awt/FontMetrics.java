@@ -12,7 +12,11 @@ public class FontMetrics {
     }
 
     public int getAscent() {
-        return font.bitmapfont.getHeight();
+        return font.bitmapfont.getAscent();
+    }
+
+    public int getDescent() {
+        return font.bitmapfont.getDescent();
     }
 
     public int getHeight() {

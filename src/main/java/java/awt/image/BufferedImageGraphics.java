@@ -88,7 +88,57 @@ class BufferedImageGraphics extends Graphics2D {
     }
 
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        fillRect(x, y, width, height);
+        if (width <= 0 || height <= 0) return;
+        if (arcWidth <= 0 || arcHeight <= 0 || arcWidth > width || arcHeight > height) {
+            fillRect(x, y, width, height);
+            return;
+        }
+        int aw2 = arcWidth / 2, ah2 = arcHeight / 2;
+        int midTop = y + ah2, midBottom = y + height - 1 - ah2;
+        for (int yy = y; yy <= y + height - 1; yy++) {
+            int inset;
+            if (yy < midTop) {
+                inset = cornerInset(aw2, ah2, midTop - yy);
+            } else if (yy > midBottom) {
+                inset = cornerInset(aw2, ah2, yy - midBottom);
+            } else {
+                inset = 0;
+            }
+            int w = width - 2 * inset;
+            if (w <= 0) w = 1;
+            fillRect(x + inset, yy, w, 1);
+        }
+    }
+
+    public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (arcWidth <= 0 || arcHeight <= 0 || arcWidth > width || arcHeight > height) {
+            drawRect(x, y, width, height);
+            return;
+        }
+        int aw2 = arcWidth / 2, ah2 = arcHeight / 2;
+        int midTop = y + ah2, midBottom = y + height - ah2; // outline spans height+1 pixels like drawRect
+        drawLine(x + aw2, y, x + width - aw2, y); // top edge
+        drawLine(x + aw2, midBottom + ah2, x + width - aw2, midBottom + ah2); // bottom edge
+        drawLine(x, midTop, x, midBottom); // left edge
+        drawLine(x + width, midTop, x + width, midBottom); // right edge
+        for (int dy = 1; dy <= ah2; dy++) {
+            int dx = aw2 - cornerInset(aw2, ah2, dy);
+            // top corners
+            fillRect(x + aw2 - dx, midTop - dy, 1, 1);
+            fillRect(x + width - aw2 + dx, midTop - dy, 1, 1);
+            // bottom corners
+            fillRect(x + aw2 - dx, midBottom + dy, 1, 1);
+            fillRect(x + width - aw2 + dx, midBottom + dy, 1, 1);
+        }
+    }
+
+    // horizontal inset of a rounded corner at vertical distance dy from the arc center
+    private static int cornerInset(int aw2, int ah2, int dy) {
+        if (dy <= 0) return 0;
+        if (dy >= ah2) return aw2;
+        double t = (double) dy / ah2;
+        int dx = (int) Math.round(aw2 * Math.sqrt(1 - t * t));
+        return aw2 - dx;
     }
 
     public synchronized void fillArc(int left, int top, int width, int height, int startAngle, int arcAngle) {
@@ -306,10 +356,6 @@ class BufferedImageGraphics extends Graphics2D {
         drawLine(x + w, y, x + w, y + h);
     }
 
-    public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        drawRect(x, y, width, height);
-    }
-
     public void drawString(String str, int x, int y) {
         drawString(str, x, y, GGraphics.BASELINE | GGraphics.LEFT);
     }
@@ -333,14 +379,16 @@ class BufferedImageGraphics extends Graphics2D {
 
         int w = font.getBitmapfont().stringWidth(str);
         int h = font.getBitmapfont().getHeight();
+        int ascent = font.getBitmapfont().getAscent();
 
+        // normalize the vertical anchor to a baseline y, then drawChar converts it to line top
         if ((anchor & GGraphics.TOP) != 0) {
+            y += ascent;
         } else if ((anchor & GGraphics.VCENTER) != 0) {
-            y -= h / 2;
+            y += ascent - h / 2;
         } else if ((anchor & GGraphics.BASELINE) != 0) {
-            y -= h;
         } else {//bottom
-            y -= h;
+            y -= h - ascent;
         }
 
         if ((anchor & GGraphics.LEFT) != 0) {
@@ -362,14 +410,16 @@ class BufferedImageGraphics extends Graphics2D {
         y += transY;
         int w = font.getBitmapfont().charWidth(character);
         int h = font.getBitmapfont().getHeight();
+        int ascent = font.getBitmapfont().getAscent();
 
+        // normalize the vertical anchor to a baseline y, then drawChar converts it to line top
         if ((anchor & GGraphics.TOP) != 0) {
+            y += ascent;
         } else if ((anchor & GGraphics.VCENTER) != 0) {
-            y -= h / 2;
+            y += ascent - h / 2;
         } else if ((anchor & GGraphics.BASELINE) != 0) {
-            y -= h;
         } else {//bottom
-            y -= h;
+            y -= h - ascent;
         }
 
         if ((anchor & GGraphics.LEFT) != 0) {
@@ -389,16 +439,21 @@ class BufferedImageGraphics extends Graphics2D {
         int end = offset + length;
         if (end > data.length) end = data.length;
 
-        int w = font.getBitmapfont().charsWidth(data);
+        int w = 0;
+        for (int i = offset; i < end; i++) {
+            w += font.getBitmapfont().charWidth(data[i]);
+        }
         int h = font.getBitmapfont().getHeight();
+        int ascent = font.getBitmapfont().getAscent();
 
+        // normalize the vertical anchor to a baseline y, then drawChar converts it to line top
         if ((anchor & GGraphics.TOP) != 0) {
+            y += ascent;
         } else if ((anchor & GGraphics.VCENTER) != 0) {
-            y -= h / 2;
+            y += ascent - h / 2;
         } else if ((anchor & GGraphics.BASELINE) != 0) {
-            y -= h;
         } else {//bottom
-            y -= h;
+            y -= h - ascent;
         }
 
         if ((anchor & GGraphics.LEFT) != 0) {

@@ -1,54 +1,39 @@
 package javax.sound.sampled;
 
-import java.io.InputStream;
+import java.io.IOException;
 
-public class Clip {
+/*
+ * FreeJ2ME is compiled against the real JDK, where Clip is an interface,
+ * so its bytecode calls these methods via invokeinterface. This shim must keep
+ * the same shape or miniJVM throws IncompatibleClassChangeError.
+ */
+public interface Clip {
 
-    public void open() {
+    int LOOP_CONTINUOUSLY = -1;
 
-    }
+    void open();
 
-    public void open(InputStream is) {
+    void open(AudioInputStream stream) throws IOException;
 
-    }
+    void close();
 
-    public void close() {
+    int getFramePosition();
 
-    }
+    void setFramePosition(int frames);
 
-    public int getFramePosition() {
-        return 0;
-    }
+    int getFrameLength();
 
-    public void setFramePosition(int frames) {
+    void setMicrosecondPosition(long microseconds);
 
-    }
+    long getMicrosecondPosition();
 
-    public int getFrameLength() {
-        return 0;
-    }
+    void start();
 
-    public void setMicrosecondPosition(long microseconds) {
+    void stop();
 
-    }
+    boolean isRunning();
 
-    public long getMicrosecondPosition() {
-        return 0;
-    }
+    void loop(int count);
 
-    public void start() {
-
-    }
-
-    public void stop() {
-
-    }
-
-    public boolean isRunning() {
-        return false;
-    }
-
-    public void loop(int count) {
-
-    }
+    void setLoopPoints(int start, int end);
 }

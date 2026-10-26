@@ -13,11 +13,15 @@ public class BitmapFont {
     static final int ARR_ID = 0, ARR_X = 1, ARR_Y = 2, ARR_W = 3, ARR_H = 4, ARR_XOFFSET = 5, ARR_YOFFSET = 6, ARR_XADVANCE = 7;
 
     static final String TAG_CHAR_COUNT = "chars count=";
+    static final String TAG_COMMON = "common ";
     static final String TAG_PAGE_ID = "page id=";
     static final String TAG_FILE = "file=";
     static final String TAG_ID = "id=";
 
     short[][] charInfo;
+
+    int lineHeight;
+    int base;
 
     BufferedImage fontShap;
 
@@ -27,7 +31,7 @@ public class BitmapFont {
 
     private void load(String fntPathInJar) {
         try {
-            InputStream is = GCallBack.getInstance().getResourceAsStream(fntPathInJar);
+            InputStream is = openRes(fntPathInJar);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
             int index = 0;
@@ -47,18 +51,37 @@ public class BitmapFont {
                 } else if (line.startsWith(TAG_CHAR_COUNT)) {
                     int count = Integer.parseInt(line.substring(line.indexOf('=') + 1));
                     charInfo = new short[count][];
+                } else if (line.startsWith(TAG_COMMON)) {
+                    int pos = line.indexOf("lineHeight=");
+                    lineHeight = Integer.parseInt(line.substring(pos + 11, line.indexOf(' ', pos)));
+                    pos = line.indexOf("base=");
+                    base = Integer.parseInt(line.substring(pos + 5, line.indexOf(' ', pos)));
                 } else if (line.startsWith(TAG_PAGE_ID)) {
                     int pos = line.indexOf(TAG_FILE) + TAG_FILE.length();
                     String bitmapFile = line.substring(pos);
                     bitmapFile = bitmapFile.replace("\"", "");
                     bitmapFile = fntPathInJar.substring(0, fntPathInJar.lastIndexOf('/')) + "/" + bitmapFile;
-                    fontShap = ImageIO.read(GCallBack.getInstance().getResourceAsStream(bitmapFile));
+                    fontShap = ImageIO.read(openRes(bitmapFile));
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // prefer the GUI callback loader; fall back to this class' loader so the
+    // font also loads in headless contexts (GCallBack not initialized)
+    private InputStream openRes(String path) {
+        try {
+            GCallBack cb = GCallBack.getInstance();
+            if (cb != null) {
+                InputStream is = cb.getResourceAsStream(path);
+                if (is != null) return is;
+            }
+        } catch (Exception ignored) {
+        }
+        return BitmapFont.class.getResourceAsStream(path);
     }
 
     /**
@@ -96,22 +119,20 @@ public class BitmapFont {
 
 
     /**
-     * draw char  without scale and translate
+     * draw char without scale and translate.
      * M00=1.0f M11=1.0f
      *
-     * @param canvas
-     * @param ch
-     * @param x
-     * @param y
+     * @param canvas target image
+     * @param ch     character
+     * @param x      pen position x (left edge of the advance)
+     * @param y      baseline y, matching java.awt.Graphics.drawString semantics
      */
     public int drawChar(BufferedImage canvas, char ch, int x, int y, int rgb, int clipX, int clipY, int clipW, int clipH) {
 
         short[] chinfo = findCharInfo(ch);
         if (chinfo != null) {
-            y += 4;//fix freej2me draw error
-
             int cx = x + chinfo[ARR_XOFFSET];
-            int cy = y + chinfo[ARR_YOFFSET];
+            int cy = y - base + chinfo[ARR_YOFFSET]; // yoffset is relative to line top
             int cw = chinfo[ARR_W];
             int chh = chinfo[ARR_H];
 
@@ -140,8 +161,7 @@ public class BitmapFont {
             GLMath.img_draw(canvas.getData().array(), canvas.getWidth(),
                     fontShap.getData().array(), fontShap.getWidth(),
                     tx1, ty1, tx2, ty2,
-//                    x + chinfo[ARR_XOFFSET], y + chinfo[ARR_YOFFSET], chinfo[ARR_W], chinfo[ARR_H],
-                    1.0f, 0.0f, -(chinfo[ARR_X] - x) + chinfo[ARR_XOFFSET], 0.0f, 1.0f, -(chinfo[ARR_Y] - y) + chinfo[ARR_YOFFSET],
+                    1.0f, 0.0f, cx - chinfo[ARR_X], 0.0f, 1.0f, cy - chinfo[ARR_Y],
                     1.0f,
                     true, rgb
             );
@@ -170,11 +190,24 @@ public class BitmapFont {
     }
 
     public int charHeight(char ch) {
-        return 12;
+        return getHeight();
     }
 
 
+    // user-facing line box: glyph box is 12 rows (lineHeight 13 has 1px built-in
+    // spacing), vertically centered: 18 = 12 + TOP_PAD 3 + BOTTOM_PAD 3, per S60 look
+    static final int TOP_PAD = 3;
+    static final int BOTTOM_PAD = 3;
+
     public int getHeight() {
-        return 12;
+        return lineHeight - 1 + TOP_PAD + BOTTOM_PAD;
+    }
+
+    public int getAscent() {
+        return base + TOP_PAD;
+    }
+
+    public int getDescent() {
+        return getHeight() - getAscent();
     }
 }
