@@ -1,0 +1,101 @@
+<frame name="J2ME_APP_SELECT_FRAME" title="J2ME APP SELECT" closable="0" w="260" h="360">
+    <table name="PAN_APP_SELECT" w="100%" h="100%" oninit="oninit()">
+        <script>
+            <![CDATA[
+        # 应用选择器：扫描 midletapp 下 *.jar，icon 取 jar 内 png，每页 30 个
+        # J2meScriptLib 经 XmlExtAssist.addExtScriptLib 注册，脚本直接调用
+        sub oninit()
+            def("pageSize", 30)
+            def("count", 0)
+            def("page", 0)
+            refreshlist()
+        ret
+
+        sub refreshlist()
+            cnt = scanMidlets()
+            def("count", cnt)
+            def("page", 0)
+            showpage()
+        ret
+
+        sub showpage()
+            pages = (count + pageSize - 1) / pageSize
+            if(pages < 1)
+                pages = 1
+            eif
+            start = page * pageSize
+            end = start + pageSize
+            if(end > count)
+                end = count
+            eif
+            clearList("LIST_APPS")
+            for(i = start, i < end, i = i + 1)
+                nm = getMidletName(i)
+                addListItem("LIST_APPS", i, nm, "onappclick")
+            efor
+            setText("LAB_PAGE", (page + 1) + "/" + pages)
+            if(page > 0)
+                setEnable("BT_PREV", true)
+            else
+                setEnable("BT_PREV", false)
+            eif
+            if(page < pages - 1)
+                setEnable("BT_NEXT", true)
+            else
+                setEnable("BT_NEXT", false)
+            eif
+        ret
+
+        sub prevpage()
+            if(page > 0)
+                page = page - 1
+                showpage()
+            eif
+        ret
+
+        sub nextpage()
+            pages = (count + pageSize - 1) / pageSize
+            if(pages < 1)
+                pages = 1
+            eif
+            if(page < pages - 1)
+                page = page + 1
+                showpage()
+            eif
+        ret
+
+        # 列表项点击：GListItem 单击先 select 再 doAction，getListIdx 取到刚点的项
+        sub onappclick()
+            idx = getListIdx("LIST_APPS")
+            if(idx >= 0)
+                jp = getMidletJar(idx)
+                runMidlet(jp)
+            eif
+        ret
+
+        ]]>
+        </script>
+        <tr h="float" w="100%">
+            <td w="100%" h="100%">
+                <list name="LIST_APPS" w="100%" h="100%" itemh="40">
+                </list>
+            </td>
+        </tr>
+        <tr h="32" w="100%">
+            <td w="30%">
+                <button name="BT_PREV" onclick="prevpage()" w="100%" h="30">&#9664; PREV</button>
+            </td>
+            <td w="40%">
+                <label name="LAB_PAGE" w="100%" h="30" align="hcenter,vcenter">1/1</label>
+            </td>
+            <td w="30%">
+                <button name="BT_NEXT" onclick="nextpage()" w="100%" h="30">NEXT &#9654;</button>
+            </td>
+        </tr>
+        <tr h="32" w="100%">
+            <td w="100%">
+                <button name="BT_REFRESH" onclick="refreshlist()" w="100%" h="30">&#10227; REFRESH</button>
+            </td>
+        </tr>
+    </table>
+</frame>

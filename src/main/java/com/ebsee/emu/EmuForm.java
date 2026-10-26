@@ -22,16 +22,16 @@ public class EmuForm extends GForm implements GChildrenListener {
             "* .", "0", "#-+",//
     };
     int[] NUM_KEYCODE = {
-            KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9,//
-            KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6,//
             KeyEvent.VK_NUMPAD1, KeyEvent.VK_NUMPAD2, KeyEvent.VK_NUMPAD3,//
+            KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5, KeyEvent.VK_NUMPAD6,//
+            KeyEvent.VK_NUMPAD7, KeyEvent.VK_NUMPAD8, KeyEvent.VK_NUMPAD9,//
             KeyEvent.VK_ASTERISK, KeyEvent.VK_NUMPAD0, KeyEvent.VK_NUMBER_SIGN,//
     };
 
     char[] NUM_CHAR = {
-            '7', '8', '9',//
-            '4', '5', '6',//
             '1', '2', '3',//
+            '4', '5', '6',//
+            '7', '8', '9',//
             '*', '0', '#',//
     };
 
@@ -252,21 +252,21 @@ public class EmuForm extends GForm implements GChildrenListener {
             case Glfw.GLFW_KEY_1:
             case Glfw.GLFW_KEY_KP_1: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_7, '7', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_1, '1', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }
             case Glfw.GLFW_KEY_2:
             case Glfw.GLFW_KEY_KP_2: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_8, '8', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_2, '2', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }
             case Glfw.GLFW_KEY_3:
             case Glfw.GLFW_KEY_KP_3: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_9, '9', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_3, '3', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }
@@ -294,21 +294,21 @@ public class EmuForm extends GForm implements GChildrenListener {
             case Glfw.GLFW_KEY_7:
             case Glfw.GLFW_KEY_KP_7: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_1, '1', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_7, '7', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }
             case Glfw.GLFW_KEY_8:
             case Glfw.GLFW_KEY_KP_8: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_2, '2', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_8, '8', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }
             case Glfw.GLFW_KEY_9:
             case Glfw.GLFW_KEY_KP_9: {
                 if (action == Glfw.GLFW_PRESS || action == Glfw.GLFW_RELEASE) {
-                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_3, '3', KeyEvent.KEY_LOCATION_NUMPAD);
+                    dispathKeyEvent(action == Glfw.GLFW_PRESS, KeyEvent.VK_9, '9', KeyEvent.KEY_LOCATION_NUMPAD);
                 }
                 break;
             }

@@ -5,7 +5,11 @@ import org.mini.glfm.Glfm;
 import org.mini.gui.*;
 import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GSizeChangeListener;
+import org.mini.layout.XContainer;
+import org.mini.layout.XEventHandler;
+import org.mini.layout.XObject;
 import org.mini.layout.loader.XuiAppHolder;
+import org.mini.layout.loader.XmlExtAssist;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
@@ -37,7 +41,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
         gform.addButtons();
         checkMidletHome();//检测midlet home目录在不在，不在就创建一个
         copyFiles();
-        openFileChooser();
+        openAppSelectFrame();
         gform.setSizeChangeListener(new GSizeChangeListener() {
             @Override
             public void onSizeChange(int i, int i1) {
@@ -85,6 +89,36 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
         File dir = new File(midletHome);
         if (!dir.exists()) {
             dir.mkdirs();
+        }
+    }
+
+    /**
+     * 打开 xml 描述的应用选择器（/ui/appselect.xml + J2meScriptLib 脚本函数库），
+     * 替代启动时的文件选取框；解析失败回退旧文件选取框
+     */
+    public void openAppSelectFrame() {
+        try {
+            XmlExtAssist assist = new XmlExtAssist(this);
+            assist.addExtScriptLib(new J2meScriptLib());
+            // doAction 的守卫要求 actionListener 非 null 才执行 onClinkScript，
+            // XML onclick 组件经 XObject 创建时会挂 assist.getEventHandler()，
+            // 必须提供非 null 的默认 handler，否则所有 onclick 都不触发
+            assist.setEventHandler(new XEventHandler());
+            String xmlStr = GToolkit.readFileFromJarAsString("/ui/appselect.xml", "utf-8");
+            XObject xobj = XContainer.parseXml(xmlStr, assist);
+            if (xobj instanceof XContainer) {
+                ((XContainer) xobj).build((int) gform.getW(), (int) gform.getH(), null);
+            }
+            GToolkit.showFrame(xobj.getGui());
+            // oninit 在 build 过程中触发，此时 frame 尚未挂到 form，
+            // GuiScriptLib 的 setText/setEnable 等找不到组件，挂上后补一次首屏填充
+            GObject tableGui = GToolkit.getComponent(gform, "PAN_APP_SELECT");
+            if (tableGui != null && tableGui.getInterpreter() != null) {
+                tableGui.getInterpreter().callSub("refreshlist()");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            openFileChooser();
         }
     }
 
