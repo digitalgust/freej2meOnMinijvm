@@ -148,6 +148,12 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     @Override
     public void onClose() {
+        if (gform != null) gform.resetVirtualInput();
+    }
+
+    @Override
+    public void onPause() {
+        if (gform != null) gform.resetVirtualInput();
     }
 
     public static void main(String args[]) {

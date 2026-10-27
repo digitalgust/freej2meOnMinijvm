@@ -60,6 +60,13 @@
             <scope>system</scope>
             <systemPath>${basedir}/src/main/resource/lib/freej2me.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>org.minijvm</groupId>
+            <artifactId>g3d</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/resource/lib/g3d.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>

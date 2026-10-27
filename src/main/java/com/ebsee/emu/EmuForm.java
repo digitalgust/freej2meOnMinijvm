@@ -3,14 +3,13 @@ package com.ebsee.emu;
 import org.mini.glfm.Glfm;
 import org.mini.glfw.Glfw;
 import org.mini.gui.*;
-import org.mini.gui.callback.GCallBack;
 import org.mini.gui.event.GChildrenListener;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class EmuForm extends GForm implements GChildrenListener {
     J2meEmu app;
@@ -41,161 +40,50 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     }
 
+    private EmuControls controls;
+    private final Set<Integer> controlPointers = new HashSet<>();
+
     public void removeAllButtons() {
-        GForm form = getForm();
-        if (form != null) {
-            List<GObject> buttons = new ArrayList<>();
-            for (GObject gObject : form.getElements()) {
-                if (gObject instanceof GButton) {
-                    buttons.add(gObject);
-                }
-            }
-            for (GObject button : buttons) {
-                form.remove(button);
-            }
+        if (controls != null) {
+            controls.resetInput();
+            remove(controls);
+            controls = null;
         }
     }
 
     public void addButtons() {
-        GForm form = getForm();
+        removeAllButtons();
+        controls = new EmuControls(this);
+        add(0, controls);
+    }
 
-        double[] inset = new double[4];//top,right,bottom,left
-        Glfm.glfmGetDisplayChromeInsets(GCallBack.getInstance().getDisplay(), inset);
-        float leftSpace = (float) inset[3] / GCallBack.getInstance().getDeviceRatio();
-        float rightSpace = (float) inset[1] / GCallBack.getInstance().getDeviceRatio();
-        float bottomSpace = (float) inset[2] / GCallBack.getInstance().getDeviceRatio();
-        float topSpace = (float) inset[0] / GCallBack.getInstance().getDeviceRatio();
+    public void resetVirtualInput() {
+        if (controls != null) controls.resetInput();
+    }
 
-        GButton exitbut = new GButton(getForm(), "", leftSpace, 30, 40f, 25f);
-        form.add(exitbut);
-        exitbut.setPreIcon("\uE741");
-        exitbut.setActionListener(gObject -> {
-            app.closeApp();
-        });
-        GButton open = new GButton(getForm(), "", leftSpace, 60, 40f, 25f);
-        form.add(open);
-        open.setPreIcon("\uD83D\uDCC1");
-        open.setActionListener(gObject -> {
-            app.openFileChooser();
-        });
-        GButton orientation = new GButton(getForm(), "", getW() - 40 - rightSpace, 30, 40f, 25f);
-        form.add(orientation);
-        orientation.setPreIcon("\uE717");
-        orientation.setActionListener(gObject -> {
-            if (Glfm.glfmGetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay()) == Glfm.GLFMInterfaceOrientationPortrait) {
-                Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationLandscapeLeft);
-            } else {
-                Glfm.glfmSetSupportedInterfaceOrientation(GCallBack.getInstance().getDisplay(), Glfm.GLFMInterfaceOrientationPortrait);
-            }
-            Glfm.glfmSetDisplayChrome(GCallBack.getInstance().getDisplay(), Glfm.GLFMUserInterfaceChromeFullscreen);
-        });
-        GButton esc = new GButton(getForm(), "", getW() - 40 - rightSpace, 60, 40f, 25f);
-        form.add(esc);
-        esc.setPreIcon("☰");
-        esc.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_ESCAPE, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-
-        //navi
-        final float dw = 240f;
-        float leftPos = getW() > getH() ? (10f + leftSpace) : (2f + leftSpace);
-        float butW = 48f;
-        float butH = butW;
-        float dx = leftPos + butW;
-        float dy = getH() - dw;
-
-
-        //menu back
-        butH = 35f;
-        dx = leftPos;
-        GButton menu = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(menu);
-        menu.setName("SOFT1");
-        menu.setPreIcon("⚏");//
-        menu.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_Q, 'q', KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        dx = leftPos + butW * 2f;
-        GButton back = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(back);
-        menu.setName("SOFT2");
-        back.setPreIcon("⇆");
-        back.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-
-        butH = butW;
-        dx = leftPos + butW;
-        dy += butH;
-        GButton up = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(up);
-        up.setPreIcon("\uE4AF");
-        up.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_UP, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        dx = leftPos;
-        dy += butH;
-        GButton left = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(left);
-        left.setPreIcon("\uE4AD");
-        left.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_LEFT, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        //OK
-        dx = leftPos + butW;
-        GButton ok2 = new GButton(getForm(), "OK", dx + 2, dy + 2, butW - 4, butH - 4);
-        form.add(ok2);
-        ok2.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        dx = leftPos + butW * 2f;
-        GButton right = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(right);
-        right.setPreIcon("\uE4AE");
-        right.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_RIGHT, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-        dx = leftPos + butW;
-        dy += butH;
-        GButton down = new GButton(getForm(), "", dx, dy, butW, butH);
-        form.add(down);
-        down.setPreIcon("\uE4B0");
-        down.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_DOWN, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
-
-
-        //num pad
-        butW = dw * 0.24f;
-        butH = 35f;
-        float spacingX = getW() > getH() ? 6f : 2;
-        float spacingY = 6f;
-        dx = getW() - (butW + spacingX) * 3f - rightSpace;
-        dy = getH() - dw;
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 3; col++) {
-                float tmpx = dx + col * (spacingX + butW);
-                float tmpy = dy + row * (spacingY + butH);
-                GButton num = new GButton(getForm(), NUM_TAG[row * 3 + col], tmpx, tmpy, butW, butH);
-                num.setFontSize(14f);
-                num.setAttachment(Integer.valueOf(row * 3 + col));
-                form.add(num);
-                num.setStateChangeListener(gObject -> {
-                    Integer ai = gObject.getAttachment();
-                    dispathKeyEvent(((GButton) gObject).isPressed(), NUM_KEYCODE[ai.intValue()], NUM_CHAR[ai.intValue()], KeyEvent.KEY_LOCATION_NUMPAD);
-                });
-            }
+    private boolean routeControlPointer(int id, int phase, int x, int y) {
+        if (phase == Glfm.GLFMTouchPhaseBegan) {
+            controlPointers.remove(id);
+            if (controls == null || findSonByXY(x, y) != controls) return false;
+            // Register before callbacks: a key press may open a dialog and reset controls.
+            controlPointers.add(id);
+            if (controls.pointerEvent(id, phase, x, y)) return true;
+            controlPointers.remove(id);
+            return false;
         }
+        if (!controlPointers.contains(id)) return false;
+        if (phase == Glfm.GLFMTouchPhaseEnded || phase == Glfm.GLFMTouchPhaseCancelled) {
+            controlPointers.remove(id);
+        }
+        if (controls != null) controls.pointerEvent(id, phase, x, y);
+        // After resize/reset, swallow this gesture's remaining events until release.
+        return true;
+    }
 
-        //OK
-        dx = getW() - (butW + spacingX) * 2f - rightSpace;
-        dy = dy + 4 * (spacingY + butH);
-        GButton ok = new GButton(getForm(), "OK", dx, dy, butW, butH);
-        form.add(ok);
-        //ok.setPreIcon("OK");
-        ok.setStateChangeListener(gObject -> {
-            dispathKeyEvent(((GButton) gObject).isPressed(), KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN);
-        });
+    @Override
+    public void onAppFocus(boolean focus) {
+        if (!focus) resetVirtualInput();
+        super.onAppFocus(focus);
     }
 
     @Override
@@ -364,6 +252,10 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     void dispathKeyEvent(boolean pressed, int keyCode, char ch, int location) {
         GFrame curFrame = findJ2meFrame(0, 0);
+        dispatchKeyEvent(curFrame, pressed, keyCode, ch, location);
+    }
+
+    void dispatchKeyEvent(GFrame curFrame, boolean pressed, int keyCode, char ch, int location) {
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getKeyListeners().forEach(keyListener -> {
 
             if (pressed) {
@@ -380,6 +272,8 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     @Override
     public void mouseButtonEvent(int button, boolean pressed, int x, int y) {
+        int pointer = -button - 2;
+        if (routeControlPointer(pointer, pressed ? Glfm.GLFMTouchPhaseBegan : Glfm.GLFMTouchPhaseEnded, x, y)) return;
         GFrame curFrame = findJ2meFrame(x, y);
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (pressed) {
@@ -403,6 +297,7 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     @Override
     public void touchEvent(int touchid, int phase, int x, int y) {
+        if (routeControlPointer(touchid, phase, x, y)) return;
         GFrame curFrame = findJ2meFrame(x, y);
         AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseListeners().forEach(mouseListener -> {
             if (phase == Glfm.GLFMTouchPhaseBegan) {
@@ -427,6 +322,7 @@ public class EmuForm extends GForm implements GChildrenListener {
     @Override
     public void onChildAdd(GObject child) {
         if (child instanceof GFrame) {
+            resetVirtualInput();
             GFrame frame = (GFrame) child;
             frame.setLocationChangeListener((oldLeft, oldTop, newLeft, newTop) -> {
                 if (child.getAttachment() instanceof Frame) {
@@ -448,11 +344,16 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     @Override
     public void onChildRemove(GObject child) {
-
+        if (child instanceof GFrame) resetVirtualInput();
     }
 
     @Override
     public boolean dragEvent(int button, float dx, float dy, float x, float y) {
+        // GLFM uses touch IDs here; GLFW uses mouse button IDs.
+        int pointer = controlPointers.contains(button) ? button : -button - 2;
+        if (routeControlPointer(pointer, Glfm.GLFMTouchPhaseMoved, (int) x, (int) y)) {
+            return true;
+        }
         GFrame curFrame = findJ2meFrame((int) x, (int) y);
         if (curFrame != null && curFrame.getAttachment() instanceof Frame) {
             AWTManager.iterAwtComponentAndProcess(curFrame, f -> f.getMouseMotionListeners().forEach(mouseListener -> {
