@@ -8,7 +8,109 @@
             def("pageSize", 30)
             def("count", 0)
             def("page", 0)
+            def("localVer", "")
+            def("remoteVer", "")
+            def("remoteUrl", "")
             refreshlist()
+            getPolicy()
+        ret
+
+        # 先获取 MiniPack 的服务发现策略，再检查当前应用版本
+        sub getPolicy()
+            if(strlen(getEnv("DISCOVERY_URL")) > 0)
+                checkUpdate()
+                ret
+            eif
+
+            policyUrl = getEnv("POLICY_URL")
+            if(strlen(policyUrl) > 0)
+                httpPost(policyUrl, getQueryPara(), "PAN_APP_SELECT.onPolicyRequestBack")
+            eif
+        ret
+
+        sub onPolicyRequestBack(url, code, msg)
+            if(code = 0)
+                lines = split(msg, "\n")
+                for(i = 0, i < arrlen(lines), i = i + 1)
+                    str = lines[i]
+                    eqIdx = indexOf(str, "=")
+                    if(eqIdx > 0)
+                        key = substr(str, 0, eqIdx)
+                        val = substr(str, eqIdx + 1)
+                        setEnv(key, val)
+                    eif
+                efor
+                checkUpdate()
+            else
+                println("获取更新服务地址失败: " + code + ", " + msg)
+            eif
+        ret
+
+        sub getQueryPara()
+            s = "appid=" + getEnv("APPID") + "&appzone=" + getEnv("APPZONE") + "&ver=" + getEnv("SVER") + "&cver=" + getEnv("CVER") + "&from=" + getEnv("FROM") + "&jar=" + getEnv("JAR") + "&lang=" + getEnv("LANG") + "&token=" + getEnv("TOKEN") + "&uuid=" + getEnv("UUID") + "&bundleid=" + getEnv("BUNDLEID")
+        ret s
+
+        sub checkUpdate()
+            accBaseUrl = getEnv("ACCOUNT_BASE_URL")
+            if(strlen(accBaseUrl) = 0)
+                println("更新服务地址为空，已跳过版本检查")
+                ret
+            eif
+
+            localVer = getJarConfig("version")
+            remoteVer = ""
+            remoteUrl = ""
+            appClass = getJarConfig("app")
+            url = accBaseUrl + "/getpluginversion"
+            post = "app=" + appClass + "&version=" + localVer + "&" + getQueryPara()
+            httpPostAsync(url, post, "PAN_APP_SELECT.onCheckUpdateBack")
+        ret
+
+        sub onCheckUpdateBack(url, code, msg)
+            if(code <> 0)
+                println("检查新版本失败: " + code + ", " + msg)
+                ret
+            eif
+
+            lines = split(msg, "\n")
+            for(i = 0, i < arrlen(lines), i = i + 1)
+                str = lines[i]
+                eqIdx = indexOf(str, "=")
+                if(eqIdx > 0)
+                    key = substr(str, 0, eqIdx)
+                    val = substr(str, eqIdx + 1)
+                    if(equals(key, "url"))
+                        remoteUrl = val
+                    eif
+                    if(equals(key, "version"))
+                        remoteVer = val
+                    eif
+                eif
+            efor
+
+            if(strlen(remoteUrl) = 0 | strlen(remoteVer) = 0)
+                println("更新服务返回的版本或下载地址为空")
+                ret
+            eif
+            if(compareVersion(localVer, remoteVer) >= 0)
+                ret
+            eif
+            showConfirm("发现新版本 " + remoteVer + "（当前 " + localVer + "），是否下载并安装？", "PAN_APP_SELECT.onUpdateConfirm")
+        ret
+
+        sub onUpdateConfirm(code)
+            if(code = 0)
+                ret
+            eif
+            downloadInstall(remoteUrl, "PAN_APP_SELECT.onDownloadInstallBack")
+        ret
+
+        sub onDownloadInstallBack(url, code, msg)
+            if(code = 0)
+                showMsg("新版本已安装，请关闭并重新启动应用")
+            else
+                showMsg("下载或安装失败: " + msg)
+            eif
         ret
 
         sub refreshlist()

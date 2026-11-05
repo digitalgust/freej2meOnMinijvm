@@ -9,6 +9,7 @@ import org.mini.layout.XContainer;
 import org.mini.layout.XEventHandler;
 import org.mini.layout.XObject;
 import org.mini.layout.loader.XuiAppHolder;
+import org.mini.layout.loader.XuiLoader;
 import org.mini.layout.loader.XmlExtAssist;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
@@ -23,6 +24,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     static J2meEmu mainApp;
     EmuForm gform;
+    XuiLoader xuiLoader;
     static String[] midlets = {"pipes-game.jar", "rayman-game.jar"};
 
     public static J2meEmu getInstance() {
@@ -61,18 +63,19 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
         //复制res中的jars到midlethome中
         for (int i = 0; i < midlets.length; i++) {
             File f = new File(getMidlletHome() + "/" + midlets[i]);
-            if (!f.exists()) {
-                try {
-                    byte[] data = GToolkit.readFileFromJar("/" + midlets[i]);
-                    if (data != null) {
-                        FileOutputStream fos = new FileOutputStream(f);
-                        fos.write(data);
-                        fos.close();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+            //每次复制
+            //if (!f.exists()) {
+            try {
+                byte[] data = GToolkit.readFileFromJar("/" + midlets[i]);
+                if (data != null) {
+                    FileOutputStream fos = new FileOutputStream(f);
+                    fos.write(data);
+                    fos.close();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            //}
         }
     }
 
@@ -98,12 +101,13 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
      */
     public void openAppSelectFrame() {
         try {
-            XmlExtAssist assist = new XmlExtAssist(this);
-            assist.addExtScriptLib(new J2meScriptLib());
+            XEventHandler eventHandler = new XEventHandler();
+            xuiLoader = new XuiLoader(this, eventHandler, new J2meScriptLib());
+            XmlExtAssist assist = xuiLoader.getXmlExtAssist();
             // doAction 的守卫要求 actionListener 非 null 才执行 onClinkScript，
             // XML onclick 组件经 XObject 创建时会挂 assist.getEventHandler()，
             // 必须提供非 null 的默认 handler，否则所有 onclick 都不触发
-            assist.setEventHandler(new XEventHandler());
+            assist.setEventHandler(eventHandler);
             String xmlStr = GToolkit.readFileFromJarAsString("/ui/appselect.xml", "utf-8");
             XObject xobj = XContainer.parseXml(xmlStr, assist);
             if (xobj instanceof XContainer) {
