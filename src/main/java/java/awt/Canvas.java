@@ -6,21 +6,30 @@ import org.mini.gui.callback.GCallBack;
 import java.awt.image.BufferedImage;
 
 public class Canvas extends Component {
-    volatile BufferedImage bimg;
+    private final Object frameLock = new Object();
+    private BufferedImage pendingFrame;
+    private BufferedImage spareFrame;
+    private long nextFrame;
+    private long submittedFrame;
 
     public Canvas() {
         GObject peer = new GCanvas(GCallBack.getInstance().getApplication().getForm(), 0, 0, 1, 1) {
+            private BufferedImage frontFrame;
+
             public boolean paint(long vg) {
-                // MIDlet 在后台线程加载，首次绘制时缓冲区可能还未创建。
-                // 即使暂时没有图像也要续请求下一帧，避免 UI 刷新在加载期间停掉。
-                GForm.flush();
-                BufferedImage image = bimg;
-                if (image != null) {
-                    //bimg.setRGB(bimg.getWidth() / 2, bimg.getHeight() / 2, 0xffffffff);
-                    image.getImage().updateImage();
-                    GToolkit.drawImage(vg, image.getImage(), getX(), getY(), getW(), getH(), false, 1.0f);
+                boolean hasNewFrame = false;
+                synchronized (frameLock) {
+                    if (pendingFrame != null) {
+                        if (frontFrame != null) spareFrame = frontFrame;
+                        frontFrame = pendingFrame;
+                        pendingFrame = null;
+                        hasNewFrame = true;
+                    }
                 }
-                //GToolkit.drawRect(vg, getX(), getY(), getW(), getH(), GToolkit.getStyle().getHighColor(), false);
+                if (frontFrame != null) {
+                    if (hasNewFrame) frontFrame.getImage().updateImage();
+                    GToolkit.drawImage(vg, frontFrame.getImage(), getX(), getY(), getW(), getH(), false, 1.0f);
+                }
                 return super.paint(vg);
             }
         };
@@ -31,26 +40,41 @@ public class Canvas extends Component {
     public void setParent(Container parent) {
         super.setParent(parent);
         setSize(parent.getWidth(), parent.getHeight());
-        if (bimg != null) {
-
-        }
-        ;
     }
 
     @Override
     public void setSize(int w, int h) {
         super.setSize(w, h);
         getPeer().getParent().reAlign();
-        bimg = null;
     }
 
     @Override
-    public Graphics getGraphics() {
-        if (bimg == null) {
-            bimg = new BufferedImage((int) getPeer().getW(), (int) getPeer().getH(), BufferedImage.TYPE_INT_ARGB);
-            // 首次生成图像或调整尺寸后，主动唤醒 UI 线程。
-            GForm.flush();
+    public void repaint() {
+        int width = (int) getPeer().getW();
+        int height = (int) getPeer().getH();
+        if (width <= 0 || height <= 0) return;
+
+        BufferedImage frame;
+        long serial;
+        synchronized (frameLock) {
+            frame = spareFrame;
+            spareFrame = null;
+            serial = ++nextFrame;
         }
-        return bimg.getGraphics();
+        if (frame == null || frame.getWidth() != width || frame.getHeight() != height) {
+            frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        }
+        // This buffer is private until paint() completes. No lock spans paint or GPU upload.
+        paint(frame.getGraphics());
+        synchronized (frameLock) {
+            if (serial < submittedFrame) {
+                if (spareFrame == null) spareFrame = frame;
+                return;
+            }
+            submittedFrame = serial;
+            if (pendingFrame != null) spareFrame = pendingFrame;
+            pendingFrame = frame;
+        }
+        GForm.flush();
     }
 }

@@ -41,6 +41,7 @@ public class EmuForm extends GForm implements GChildrenListener {
     }
 
     private EmuControls controls;
+    private boolean directionButtons;
     private final Set<Integer> controlPointers = new HashSet<>();
 
     public void removeAllButtons() {
@@ -53,8 +54,13 @@ public class EmuForm extends GForm implements GChildrenListener {
 
     public void addButtons() {
         removeAllButtons();
-        controls = new EmuControls(this);
+        controls = new EmuControls(this, directionButtons);
         add(0, controls);
+    }
+
+    void toggleDirectionMode() {
+        directionButtons = !directionButtons;
+        addButtons();
     }
 
     public void resetVirtualInput() {

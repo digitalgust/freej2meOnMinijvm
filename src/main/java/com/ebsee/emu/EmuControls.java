@@ -37,7 +37,7 @@ class EmuControls extends GPanel {
         int count = 1;
     }
 
-    EmuControls(EmuForm form) {
+    EmuControls(EmuForm form, boolean directionButtons) {
         super(form, 0, 0, form.getW(), form.getH());
         emuForm = form;
         setName("J2ME_CONTROLS");
@@ -63,7 +63,8 @@ class EmuControls extends GPanel {
             resetInput();
             emuForm.app.openFileChooser();
         });
-        addAction("", "\uE717", getW() - 40 - rightSpace, 30, 40, 25, () -> {
+        float toolbarX = getW() - 40 - rightSpace;
+        addAction("", "\uE717", toolbarX, 30, 40, 25, () -> {
             resetInput();
             long display = GCallBack.getInstance().getDisplay();
             int orientation = Glfm.glfmGetSupportedInterfaceOrientation(display);
@@ -72,8 +73,12 @@ class EmuControls extends GPanel {
                             ? Glfm.GLFMInterfaceOrientationLandscapeLeft : Glfm.GLFMInterfaceOrientationPortrait);
             Glfm.glfmSetDisplayChrome(display, Glfm.GLFMUserInterfaceChromeFullscreen);
         });
-        addKey("", "☰", getW() - 40 - rightSpace, 60, 40, 25,
+        addKey("", "☰", toolbarX, 60, 40, 25,
                 KeyEvent.VK_ESCAPE, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN, false);
+        float modeButtonY = 90;
+        float modeButtonH = 25;
+        addAction(directionButtons ? "⦿" : "✚", null, toolbarX, modeButtonY, 40, modeButtonH,
+                form::toggleDirectionMode);
 
         float leftPos = (getW() > getH() ? 10 : 2) + leftSpace;
         float top = getH() - 240;
@@ -82,30 +87,50 @@ class EmuControls extends GPanel {
         addKey("", "⇆", leftPos + 96, top, 48, 35,
                 KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN, false);
 
-        // Use the same slot/stick images and rendering as GamePanel's joystick.
-        joystick = new DirectionStick(leftPos, top + 48, 144);
-        joystick.setJoystickListener(this::onJoystickMove);
-        widgets.add(joystick);
-
         float buttonW = 240 * .24f;
         float buttonH = 35;
         float spacingX = getW() > getH() ? 6 : 2;
-        float numberX = getW() - (buttonW + spacingX) * 3 - rightSpace;
+        float keypadRight = getW() - rightSpace;
+        if (getW() > getH() && top < modeButtonY + modeButtonH) {
+            // Leave room for the toolbar in short landscape windows.
+            keypadRight = toolbarX;
+        }
+        float numberX = keypadRight - (buttonW + spacingX) * 3;
+        float directionAreaSize = 144;
+        float leftSoftX = Math.min(leftPos + directionAreaSize + spacingX, numberX - buttonW - spacingX);
+        float directionY = top + 48;
+        if (directionButtons) {
+            joystick = null;
+            // Fit the lower direction key next to the soft key on narrow screens.
+            float size = Math.min(48, Math.max(32, (leftSoftX - leftPos) / 2));
+            addDirectionKey("\uE4AF", leftPos + size, directionY, size, KeyEvent.VK_UP);
+            addDirectionKey("\uE4AD", leftPos, directionY + size, size, KeyEvent.VK_LEFT);
+            addDirectionKey("\uE4AE", leftPos + size * 2, directionY + size, size, KeyEvent.VK_RIGHT);
+            addDirectionKey("\uE4B0", leftPos + size, directionY + size * 2, size, KeyEvent.VK_DOWN);
+        } else {
+            joystick = new DirectionStick(leftPos, directionY, directionAreaSize);
+            joystick.setJoystickListener(this::onJoystickMove);
+            widgets.add(joystick);
+        }
+
         for (int i = 0; i < form.NUM_TAG.length; i++) {
             addKey(form.NUM_TAG[i], null, numberX + (i % 3) * (buttonW + spacingX),
                     top + (i / 3) * 41, buttonW, 35, form.NUM_KEYCODE[i], form.NUM_CHAR[i],
                     KeyEvent.KEY_LOCATION_NUMPAD, true);
         }
         float actionY = top + 4 * 41;
-        // Keep the extra soft keys beside the joystick and under '*', without overlapping each other.
-        float leftSoftX = Math.min(leftPos + joystick.getW() + spacingX, numberX - buttonW - spacingX);
         addKey("", "⚏", leftSoftX, actionY, buttonW, buttonH,
                 KeyEvent.VK_Q, 'q', KeyEvent.KEY_LOCATION_UNKNOWN, false);
         addKey("", "⇆", numberX, actionY, buttonW, buttonH,
                 KeyEvent.VK_W, KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN, false);
-        addKey("OK", null, getW() - (buttonW + spacingX) * 2 - rightSpace,
+        addKey("OK", null, numberX + buttonW + spacingX,
                 actionY, buttonW, buttonH, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED,
                 KeyEvent.KEY_LOCATION_UNKNOWN, false);
+    }
+
+    private void addDirectionKey(String icon, float x, float y, float size, int code) {
+        addKey("", icon, x, y, size, size, code,
+                KeyEvent.CHAR_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN, false);
     }
 
     private void addAction(String label, String icon, float x, float y, float w, float h, Runnable action) {
@@ -202,7 +227,7 @@ class EmuControls extends GPanel {
         for (Widget widget : widgets.getWidgets()) {
             if (widget instanceof KeyButton) ((KeyButton) widget).reset();
         }
-        joystick.reset();
+        if (joystick != null) joystick.reset();
         setDirections(0);
         // Also release anything held when a control callback changed the UI.
         for (Integer code : new ArrayList<>(heldKeys.keySet())) {
