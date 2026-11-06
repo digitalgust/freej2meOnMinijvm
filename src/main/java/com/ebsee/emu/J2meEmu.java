@@ -113,7 +113,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
             if (xobj instanceof XContainer) {
                 ((XContainer) xobj).build((int) gform.getW(), (int) gform.getH(), null);
             }
-            GToolkit.showFrame(xobj.getGui());
+            GToolkit.showFrame(xobj.getGui(),(gform.getW()-xobj.getGui().getW())/2,10);
             // oninit 在 build 过程中触发，此时 frame 尚未挂到 form，
             // GuiScriptLib 的 setText/setEnable 等找不到组件，挂上后补一次首屏填充
             GObject tableGui = GToolkit.getComponent(gform, "PAN_APP_SELECT");
