@@ -1,6 +1,12 @@
 # freej2me On Minijvm
 J2me adapted minijvm 
 
+## License
+GPL-3.0-or-later. This project is a derivative work of
+[FreeJ2ME](https://github.com/hex007/freej2me) (GPL-3.0-or-later), which is
+bundled and linked in-process, so the GPL applies to the whole distribution.
+See [LICENSE](LICENSE) for details and third-party notices.
+
 
 ## Run
  Download the release and run.   https://github.com/digitalgust/freej2meOnMinijvm/releases/tag/Ver1.0.0
