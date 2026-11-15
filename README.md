@@ -22,6 +22,17 @@ Select a file that's J2me Midlet
 freej2me is a j2me emulator developed in java :    
 https://github.com/digitalgust/freej2me    
 
+## MIDI audio
+
+MIDI playback uses the Java SoundFont engine from `android-synth` (BSD-2-Clause).
+The Android `AudioTrack` and native ALSA/MIDI drivers are not included; rendered
+PCM is sent through MiniJVM's existing XGUI `MaDevice` audio API.
+
+A compact GM SoundFont is bundled at `src/main/resource/midi/` under GPL-3.0-only.
+To use another `.sf2` file, set the JVM property
+`-Dfreej2me.midi.soundfont=path/to/soundfont.sf2`.
+Standard MIDI File formats 0 and 1 are supported.
+
 screen shot:
 
  <div align=center><img width="900" height="536" src="https://raw.githubusercontent.com/digitalgust/freej2meOnMinijvm/master/screen.png"/></div>

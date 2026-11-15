@@ -18,6 +18,7 @@ import org.minijvm.md2xmlui.MdConfig;
 import org.minijvm.md2xmlui.browser.MdBrowser;
 import org.minijvm.md2xmlui.browser.MdBrowserListener;
 import org.minijvm.md2xmlui.browser.DownloadTask;
+import javax.sound.midi.MidiSystem;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -224,6 +225,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     @Override
     public void onClose() {
+        MidiSystem.shutdownAll();
         if (browser != null) browser.close();
         if (gform != null) gform.resetVirtualInput();
     }
@@ -234,7 +236,9 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
     }
 
     public static void main(String args[]) {
-        FreeJ2ME app = new FreeJ2ME(args);
+        MidiSystem.beginApplication();
+        String[] launchArgs = args == null ? new String[0] : args.clone();
+        FreeJ2ME.openOrFocus(launchArgs);
     }
 
     @Override
