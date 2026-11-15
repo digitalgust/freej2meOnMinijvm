@@ -63,6 +63,10 @@ class EmuControls extends GPanel {
             resetInput();
             emuForm.app.openFileChooser();
         });
+        addAction("", "\uE776", leftSpace, 90, 40, 25, () -> {
+            resetInput();
+            emuForm.app.openBrowser();
+        });
         float toolbarX = getW() - 40 - rightSpace;
         addAction("", "\uE717", toolbarX, 30, 40, 25, () -> {
             resetInput();

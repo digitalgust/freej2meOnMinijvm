@@ -2,6 +2,7 @@ package com.ebsee.emu;
 
 import org.mini.gui.GContainer;
 import org.mini.gui.GForm;
+import org.mini.gui.GFrame;
 import org.mini.gui.GImage;
 import org.mini.gui.GList;
 import org.mini.gui.GListItem;
@@ -37,6 +38,7 @@ public class J2meScriptLib extends Lib {
         File jarFile;
         String appName;   // MANIFEST MIDlet-Name，解析不到回退 jar 文件名
         String iconEntry; // jar 内 icon 条目名，可为 null
+        String rmsSuiteName = "null";
         GImage icon;      // 懒加载缓存，失败为 null
         boolean iconLoaded;
 
@@ -55,6 +57,7 @@ public class J2meScriptLib extends Lib {
         methodNames.put("runMidlet".toLowerCase(), this::runMidlet);//
         methodNames.put("addListItem".toLowerCase(), this::addListItem);//
         methodNames.put("clearList".toLowerCase(), this::clearList);//
+        methodNames.put("confirmDeleteMidlet".toLowerCase(), this::confirmDeleteMidlet);
     }
 
     // -------------------------------------------------------------------------
@@ -105,12 +108,13 @@ public class J2meScriptLib extends Lib {
     }
 
     /**
-     * 显示名：MANIFEST MIDlet-Name，缺省 jar 文件名
+     * 显示名：MIDlet 名称/JAR 文件名；MIDlet 名称缺省时回退到 JAR 文件名。
      */
     public DataType getMidletName(ArrayList<DataType> para) {
         int idx = Interpreter.popBackInt(para);
         if (idx < 0 || idx >= midlets.size()) return Interpreter.getCachedStr("");
-        return Interpreter.getCachedStr(midlets.get(idx).appName);
+        MidletInfo midlet = midlets.get(idx);
+        return Interpreter.getCachedStr(midlet.appName + "/" + midlet.jarFile.getName());
     }
 
     /**
@@ -161,6 +165,83 @@ public class J2meScriptLib extends Lib {
             GForm.flush();
         }
         return null;
+    }
+
+    public DataType confirmDeleteMidlet(ArrayList<DataType> para) {
+        int index = Interpreter.popBackInt(para);
+        if (index < 0 || index >= midlets.size()) return null;
+        MidletInfo selected = midlets.get(index);
+        J2meEmu app = J2meEmu.getInstance();
+        try {
+            File jar = selected.jarFile.getCanonicalFile();
+            File home = new File(app.getMidlletHome()).getCanonicalFile();
+            if (!selected.jarFile.getAbsoluteFile().equals(jar)
+                    || !home.equals(jar.getParentFile()) || !jar.isFile()) {
+                throw new java.io.IOException("应用文件已改变，请刷新列表后重试。");
+            }
+            // Match RecordStore's dataPath + "./rms/" path construction exactly.
+            File rmsRoot = new File(app.getRmsRoot() + "./rms").getCanonicalFile();
+            File rms = new File(rmsRoot, jar.getName() + "_" + selected.rmsSuiteName);
+            if (!rmsRoot.equals(rms.getCanonicalFile().getParentFile())) {
+                throw new java.io.IOException("RMS 路径超出应用目录，已停止删除。");
+            }
+            long size = jar.length();
+            long modified = jar.lastModified();
+            String message = "确定删除 " + selected.appName + "/" + jar.getName()
+                    + "？\n将同时删除全部 RMS 存档，无法恢复。\nRMS：" + rms.getName();
+            GFrame confirm = GToolkit.getConfirmFrame(app.getForm(), "删除应用", message,
+                    "删除", button -> {
+                        button.getFrame().close();
+                        try {
+                            if (isMidletRunning(app, jar.getName())) {
+                                throw new java.io.IOException("请先关闭这个应用的模拟器窗口，再删除。");
+                            }
+                            if (!jar.isFile() || jar.length() != size || jar.lastModified() != modified) {
+                                throw new java.io.IOException("应用文件已改变，请刷新列表后重试。");
+                            }
+                            // Mark bundled apps so startup cannot recreate a deleted JAR.
+                            app.setProperty("midlet.deleted." + jar.getName(), "true");
+                            deleteRmsTree(rms, rmsRoot);
+                            if (!jar.delete()) throw new java.io.IOException("无法删除 JAR 文件。");
+                        } catch (Exception e) {
+                            showDeleteError(app, e.getMessage() + "\n删除可能尚未完成，请检查后重试。");
+                        } finally {
+                            app.refreshAppSelect();
+                        }
+                    }, "取消", button -> button.getFrame().close());
+            GToolkit.showFrame(confirm);
+        } catch (Exception e) {
+            showDeleteError(app, e.getMessage());
+        }
+        return null;
+    }
+
+    private static boolean isMidletRunning(J2meEmu app, String jarName) {
+        for (GObject child : app.getForm().getElements()) {
+            if (child instanceof GFrame && child.getAttachment() instanceof java.awt.Frame) {
+                if (((GFrame) child).getTitle().endsWith("/" + jarName)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static void showDeleteError(J2meEmu app, String message) {
+        GToolkit.showFrame(GToolkit.getMsgFrame(app.getForm(), "删除未完成", message));
+    }
+
+    static void deleteRmsTree(File file, File parent) throws java.io.IOException {
+        // Check each node before recursing; a symbolic link must not escape the selected tree.
+        File canonical = file.getCanonicalFile();
+        if (!file.getAbsoluteFile().equals(canonical) || !parent.equals(canonical.getParentFile())) {
+            throw new java.io.IOException("RMS 路径包含外部链接，已停止删除。");
+        }
+        if (!file.exists()) return;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children == null) throw new java.io.IOException("无法读取 RMS 目录。");
+            for (File child : children) deleteRmsTree(child, canonical);
+        }
+        if (!file.delete()) throw new java.io.IOException("无法删除 RMS：" + file.getName());
     }
 
     /**
@@ -246,6 +327,7 @@ public class J2meScriptLib extends Lib {
             String m1 = attrs.get("MIDlet-1");
             if (m1 != null) {
                 String[] parts = m1.split(",");
+                if (parts.length == 3) mi.rmsSuiteName = parts[0].trim().replace(":", "");
                 if (parts.length >= 2 && parts[1].trim().length() > 0) {
                     iconPath = parts[1].trim();
                 }

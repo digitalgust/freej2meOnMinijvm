@@ -18,3 +18,4 @@ cmake-build-release
 
 *.class
 .DS_Store
+/reader-auth.properties

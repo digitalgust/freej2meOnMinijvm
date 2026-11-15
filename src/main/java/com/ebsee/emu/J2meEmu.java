@@ -14,10 +14,18 @@ import org.mini.layout.loader.XmlExtAssist;
 import org.recompile.freej2me.FreeJ2ME;
 import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
+import org.minijvm.md2xmlui.MdConfig;
+import org.minijvm.md2xmlui.browser.MdBrowser;
+import org.minijvm.md2xmlui.browser.MdBrowserListener;
+import org.minijvm.md2xmlui.browser.DownloadTask;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class J2meEmu extends GApplication implements XuiAppHolder {
 
@@ -25,7 +33,10 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
     static J2meEmu mainApp;
     EmuForm gform;
     XuiLoader xuiLoader;
-    static String[] midlets = {"pipes-game.jar", "rayman-game.jar"};
+    private MdBrowser browser;
+    private GFrame browserFrame;
+    private static final String BROWSER_HOME = "https://p.ysbit.cn/static/webj2me.html";
+    static String[] midlets = {"pipes-game.jar"};
 
     public static J2meEmu getInstance() {
         return mainApp;
@@ -56,12 +67,68 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
             }
         });
         gform.addChildrenListener(gform);
+        openBrowser();
+    }
 
+    void openBrowser() {
+        if (browserFrame != null && browserFrame.getParent() != null) {
+            GToolkit.showFrame(browserFrame);
+            return;
+        }
+        MdConfig config = MdConfig.fromApplication(this);
+        config.setDownloadDirectory(new File(getMidlletHome()));
+        if (config.getApiKey().length() == 0) {
+            File keyFile = new File(getSaveRoot(), "webclaw.key");
+            if (keyFile.isFile()) {
+                Properties settings = new Properties();
+                try (FileInputStream input = new FileInputStream(keyFile)) {
+                    settings.load(input);
+                    config.setApiKey(settings.getProperty("webclaw.key", ""));
+                } catch (IOException e) {
+                    System.err.println("Unable to read local Reader key configuration.");
+                }
+            }
+        }
+        if (config.getApiKey().length() == 0) {
+            try (InputStream input = getClass().getResourceAsStream("/reader-auth.properties")) {
+                if (input != null) {
+                    Properties settings = new Properties();
+                    settings.load(input);
+                    config.setApiKey(settings.getProperty("webclaw.key", ""));
+                }
+            } catch (IOException e) {
+                System.err.println("Unable to read bundled Reader key configuration.");
+            }
+        }
+        browserFrame = MdBrowser.createFrame(this, config);
+        browserFrame.setBgColor(226, 235, 244, 255);
+        browser = MdBrowser.getBrowser(browserFrame);
+        browser.getWebView().setBgColor(244, 248, 252, 255);
+        GObject statusBar = GToolkit.getComponent(browserFrame, "MD_STATUS_BAR");
+        if (statusBar != null) statusBar.setBgColor(226, 235, 244, 255);
+        browser.setListener(new MdBrowserListener() {
+            @Override
+            public void onDownloadCompleted(MdBrowser browser, DownloadTask task) {
+                File file = task.targetFile;
+                if (file != null && file.isFile() && file.getName().toLowerCase().endsWith(".jar")) {
+                    refreshAppSelect();
+                    GObject appSelectFrame = GToolkit.getComponent(gform, "J2ME_APP_SELECT_FRAME");
+                    if (appSelectFrame != null) {
+                        GToolkit.showFrame(appSelectFrame,
+                                appSelectFrame.getLocationLeft(), appSelectFrame.getLocationTop());
+                        gform.flushNow();
+                    }
+                }
+            }
+        });
+        GToolkit.showFrame(browserFrame);
+        browser.open(BROWSER_HOME);
     }
 
     void copyFiles() {
         //复制res中的jars到midlethome中
         for (int i = 0; i < midlets.length; i++) {
+            if ("true".equals(getProperty("midlet.deleted." + midlets[i], ""))) continue;
             File f = new File(getMidlletHome() + "/" + midlets[i]);
             //每次复制
             //if (!f.exists()) {
@@ -116,13 +183,18 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
             GToolkit.showFrame(xobj.getGui(),(gform.getW()-xobj.getGui().getW())/2,10);
             // oninit 在 build 过程中触发，此时 frame 尚未挂到 form，
             // GuiScriptLib 的 setText/setEnable 等找不到组件，挂上后补一次首屏填充
-            GObject tableGui = GToolkit.getComponent(gform, "PAN_APP_SELECT");
-            if (tableGui != null && tableGui.getInterpreter() != null) {
-                tableGui.getInterpreter().callSub("refreshlist()");
-            }
+            refreshAppSelect();
         } catch (Exception e) {
             e.printStackTrace();
             openFileChooser();
+        }
+    }
+
+    void refreshAppSelect() {
+        GObject tableGui = GToolkit.getComponent(gform, "PAN_APP_SELECT");
+        if (tableGui != null && tableGui.getInterpreter() != null) {
+            tableGui.getInterpreter().callSub("refreshlist()");
+            gform.flushNow();
         }
     }
 
@@ -152,6 +224,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     @Override
     public void onClose() {
+        if (browser != null) browser.close();
         if (gform != null) gform.resetVirtualInput();
     }
 
@@ -171,7 +244,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     @Override
     public GContainer getWebView() {
-        return null;
+        return browser == null ? null : browser.getWebView();
     }
 }
 

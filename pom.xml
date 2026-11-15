@@ -73,6 +73,13 @@
             <scope>system</scope>
             <systemPath>${basedir}/src/main/resource/lib/g3d.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>org.minijvm</groupId>
+            <artifactId>md2xmlui</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/resource/lib/md2xmlui.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>

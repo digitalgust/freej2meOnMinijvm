@@ -170,8 +170,17 @@
         sub onappclick()
             idx = getListIdx("LIST_APPS")
             if(idx >= 0)
-                jp = getMidletJar(idx)
+                jp = getMidletJar(page * pageSize + idx)
                 runMidlet(jp)
+            eif
+        ret
+
+        sub deleteapp()
+            idx = getListIdx("LIST_APPS")
+            if(idx >= 0)
+                confirmDeleteMidlet(page * pageSize + idx)
+            else
+                showMsg("请先选择要删除的应用")
             eif
         ret
 
@@ -192,6 +201,11 @@
             </td>
             <td w="30%">
                 <button name="BT_NEXT" onclick="nextpage()" w="100%" h="30">NEXT &#9654;</button>
+            </td>
+        </tr>
+        <tr h="32" w="100%">
+            <td w="100%">
+                <button name="BT_DELETE" onclick="deleteapp()" w="100%" h="30">删除应用及存档</button>
             </td>
         </tr>
         <tr h="32" w="100%">
