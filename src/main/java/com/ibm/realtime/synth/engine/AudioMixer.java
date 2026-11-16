@@ -54,57 +54,49 @@ public class AudioMixer implements AudioInput, Serviceable {
 	}
 
 	private AudioInput[] localStreams = new AudioInput[16];
+	private AudioInput[] localRenderStreams = new AudioInput[16];
 
 	/**
 	 * The actual mixing function type 1 (mix into the provided buffer)
 	 */
 	public void read(AudioTime time, AudioBuffer buffer, int offset, int count) {
-		// get a local copy of the input streams, so that we can call
-		// the potentially time-consuming rendering task unsynchronized
-		synchronized (streams) {
-			int size = streams.size();
-			if (localStreams.length < size) {
-				localStreams = new AudioInput[size + 8];
-			}
-			localStreams = (AudioInput[]) streams.toArray(localStreams);
-			// localStreams must be null-terminated if it has more elements
-			// than size. toArray() does null-terminate!
-		}
+		int streamCount = copyStreamsToLocalArray();
+		readStreams(localStreams, streamCount, time, buffer, offset, count);
+	}
 
-		// read from all registered input streams
-		for (AudioInput stream : localStreams) {
-			if (stream == null) break;
+	private void readStreams(AudioInput[] snapshot, int streamCount,
+			AudioTime time, AudioBuffer buffer, int offset, int count) {
+		// Read the stable snapshot with an indexed loop. Avoid allocating a
+		// LinkedList iterator for every 5 ms audio slice.
+		boolean cleanupRequired = false;
+		for (int i = 0; i < streamCount; i++) {
+			AudioInput stream = snapshot[i];
 			// read from this source stream, it will add to
 			// the buffer
 			stream.read(time, buffer, offset, count);
+			if (stream.done()) cleanupRequired = true;
 		}
-		// AudioPullThread calls read once per small audio slice. Remove completed
-		// notes here so stale NoteInput instances cannot accumulate indefinitely.
-		cleanUp();
+		// Remove completed notes promptly, but don't allocate a list iterator on
+		// every slice when all voices are still active.
+		if (cleanupRequired) cleanUp();
 	}
 
 	/**
 	 * The actual mixing function type 2 (return a mixed buffer)
 	 */
 	public AudioBuffer read(AudioTime time, int sampleCount, int channelCount, float sampleRate) {
-		// get a local copy of the input streams, so that we can call
-		// the potentially time-consuming rendering task unsynchronized
-		AudioInput[] streamsCopy;
-		synchronized (streams) {
-			int size = streams.size();
-			streamsCopy = (AudioInput[]) streams.toArray(new AudioInput[size]);
-		}
-		
 		AudioBuffer returnBuffer = new AudioBuffer(channelCount, sampleCount, sampleRate);
-
-		// read from all registered input streams
-		for (AudioInput stream : streamsCopy) {
-			// read from this source stream, it will add to
-			// the buffer
-			AudioBuffer buffer = stream.read(time, sampleCount, channelCount, sampleRate);
-			returnBuffer.mix(buffer);
+		// Keep an independent snapshot because this API can be called separately
+		// from the type-1 pull path. Reuse the supplied output buffer for every
+		// voice instead of allocating one AudioBuffer per voice and slice.
+		AudioInput[] streamsCopy;
+		int streamCount;
+		synchronized (streams) {
+			streamCount = streams.size();
+			streamsCopy = (AudioInput[]) streams.toArray(
+					new AudioInput[streamCount]);
 		}
-		cleanUp();
+		readStreams(streamsCopy, streamCount, time, returnBuffer, 0, sampleCount);
 		return returnBuffer;
 	}
 
@@ -255,27 +247,53 @@ public class AudioMixer implements AudioInput, Serviceable {
 			if (renderables.length < size) {
 				return -size;
 			}
-			int i = 0;
-			for (AudioInput ai : streams) {
+			if (localRenderStreams.length < size) {
+				localRenderStreams = new AudioInput[size + 8];
+			}
+			streams.toArray(localRenderStreams);
+			int renderableCount = 0;
+			for (int i = 0; i < size; i++) {
+				AudioInput ai = localRenderStreams[i];
 				if (ai instanceof Renderable && !ai.done()) {
-					renderables[i++] = (Renderable) ai;
+					renderables[renderableCount++] = (Renderable) ai;
 				}
 			}
-			return i;
+			return renderableCount;
 		}
 	}
 
 	public final Renderable[] getRenderables() {
 		synchronized (streams) {
 			int size = streams.size();
+			if (localRenderStreams.length < size) {
+				localRenderStreams = new AudioInput[size + 8];
+			}
+			streams.toArray(localRenderStreams);
 			Renderable[] renderables = new Renderable[size];
-			int i = 0;
-			for (AudioInput ai : streams) {
+			int renderableCount = 0;
+			for (int i = 0; i < size; i++) {
+				AudioInput ai = localRenderStreams[i];
 				if (ai instanceof Renderable && !ai.done()) {
-					renderables[i++] = (Renderable) ai;
+					renderables[renderableCount++] = (Renderable) ai;
 				}
 			}
-			return renderables;
+			if (renderableCount == renderables.length) {
+				return renderables;
+			}
+			Renderable[] compact = new Renderable[renderableCount];
+			System.arraycopy(renderables, 0, compact, 0, renderableCount);
+			return compact;
+		}
+	}
+
+	private int copyStreamsToLocalArray() {
+		synchronized (streams) {
+			int size = streams.size();
+			if (localStreams.length < size) {
+				localStreams = new AudioInput[size + 8];
+			}
+			streams.toArray(localStreams);
+			return size;
 		}
 	}
 

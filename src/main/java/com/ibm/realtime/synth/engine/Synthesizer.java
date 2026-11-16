@@ -182,14 +182,14 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	 * next slice to be rendered. So this time has already passed and all events
 	 * to be scheduled before this time must be immediately processed
 	 */
-	private volatile AudioTime nextAudioSliceTime = new AudioTime(0);
+	private volatile long nextAudioSliceTimeNanos;
 
 	/**
 	 * Keep track of the duration of the last audio slice in order to
 	 * extrapolate the duration of the next audio slice. This is used in the
 	 * asynchronous event dispatcher.
 	 */
-	private AudioTime nextAudioSliceDuration = new AudioTime(0);
+	private long nextAudioSliceDurationNanos;
 
 	/**
 	 * An optional pointer to the audio clock of the rendering device, with
@@ -627,7 +627,8 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			}
 		}
 		reset();
-		nextAudioSliceTime = new AudioTime(0);
+		nextAudioSliceTimeNanos = 0;
+		nextAudioSliceDurationNanos = 0;
 	}
 
 	/**
@@ -694,7 +695,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 						&& patch.getBank() == bank
 						&& patch.getProgram() == program && !ni.done()) {
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 								+ ": stopping exclusive note, level="
 								+ patch.getExclusiveLevel() + " note:" + ni);
 					}
@@ -723,7 +724,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 					// no need to check linked notes
 					ni.release(time);
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 								+ ": releasing sustained note:" + ni);
 					}
 				}
@@ -749,7 +750,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 					// no need to check linked notes
 					ni.setSostenuto(time, active);
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 								+ ": " + "setting sostenuto to " + active
 								+ ": note:" + ni);
 					}
@@ -766,7 +767,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	 */
 	private void handleAllSoundOff(AudioMixer localMixer, MidiChannel channel) {
 		if (DEBUG_SYNTH) {
-			debug("Synth " + nextAudioSliceTime.getMillisTime()
+			debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 					+ ": all sound off channel " + channel);
 		}
 		AudioInput[] lines = localMixer.getAudioStreamsArray();
@@ -791,7 +792,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	private void handleAllNotesOff(AudioMixer localMixer, MidiChannel channel,
 			AudioTime time) {
 		if (DEBUG_SYNTH) {
-			debug("Synth " + nextAudioSliceTime.getMillisTime()
+			debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 					+ ": all notes off channel " + channel);
 		}
 		AudioInput[] lines = localMixer.getAudioStreamsArray();
@@ -867,7 +868,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 				NoteInput ni = getNoteFromMixer(localMixer, channel, note);
 				if (ni != null) {
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						debug("Synth " + (nextAudioSliceTimeNanos / 1000000L)
 								+ ": " + "stopping self-exclusive note " + ni);
 					}
 					stopAsap(ni);
@@ -876,7 +877,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 
 			if (patch.getExclusiveLevel() != 0) {
 				if (DEBUG_SYNTH) {
-					debug("Synth " + nextAudioSliceTime.getMillisTime() + ": "
+					debug("Synth " + (nextAudioSliceTimeNanos / 1000000L) + ": "
 							+ "playing exclusive note, level="
 							+ patch.getExclusiveLevel());
 				}
@@ -893,15 +894,17 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 				if (DEBUG_SYNTH_TIMING) {
 					if (thisNoteStream != firstNoteStream) {
 						debug("Synth NoteOn: nextAudioSlice="
-								+ nextAudioSliceTime.getMillisTime() + "ms. "
+								+ (nextAudioSliceTimeNanos / 1000000L) + "ms. "
 								+ "adding linked instrument with "
-								+ time.subtract(nextAudioSliceTime)
+								+ new AudioTime(time.getNanoTime()
+										- nextAudioSliceTimeNanos)
 								+ " delay: " + thisNoteStream);
 					} else {
 						debug("Synth NoteOn: nextAudioSlice="
-								+ nextAudioSliceTime.getMillisTime() + "ms. "
+								+ (nextAudioSliceTimeNanos / 1000000L) + "ms. "
 								+ "adding instrument with "
-								+ time.subtract(nextAudioSliceTime)
+								+ new AudioTime(time.getNanoTime()
+										- nextAudioSliceTimeNanos)
 								+ " delay: " + thisNoteStream);
 					}
 				}
@@ -1109,7 +1112,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			String add = "";
 			if (masterClock != null) {
 				long master = masterClock.getAudioTime().getMillisTime() + (masterClockOffsetNanos / 1000000L);
-				long masterSliceDiff = nextAudioSliceTime.getMillisTime()
+				long masterSliceDiff = (nextAudioSliceTimeNanos / 1000000L)
 						- master;
 				add = " | master=" + master + "ms, masterSliceDiff="
 						+ masterSliceDiff + "ms";
@@ -1118,11 +1121,11 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 							+ "ms!";
 				}
 			}
-			long eventSliceDiff = eventTime.getMillisTime()
-					- nextAudioSliceTime.getMillisTime();
+			long nextSliceMillis = nextAudioSliceTimeNanos / 1000000L;
+			long eventSliceDiff = eventTime.getMillisTime() - nextSliceMillis;
 			debug("Synth: Incoming: " + "adjustedEventTime="
 					+ eventTime.getMillisTime() + "ms, " + "nextSlice="
-					+ nextAudioSliceTime.getMillisTime() + "ms, "
+					+ nextSliceMillis + "ms, "
 					+ "eventSliceDiff=" + eventSliceDiff + "ms" + add);
 			if (DEBUG_SYNTH) debugShowAudioTime += 2;
 		}
@@ -1134,7 +1137,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		// be retrieved from the queue anyway. Enqueuing all events
 		// increases predictability.
 		// // don't queue if the event is already too late
-		// if (nextAudioSliceTime.laterOrEqualThan(eventTime)) {
+		// if (nextAudioSliceTimeNanos >= eventTime.getNanoTime()) {
 		// if (DEBUG_SYNTH) {
 		// debug("## Synth: event comes too late for correct scheduling! "
 		// + "event=" + event);
@@ -1154,20 +1157,28 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	 * asynchronous renderer is used, start rendering the new slice.
 	 */
 	public final void newAudioSlice(AudioTime time, AudioTime duration) {
+		long sliceTimeNanos = time.getNanoTime();
 		if (masterClockOffsetNanos > 0) {
-			time = time.add(masterClockOffsetNanos);
+			sliceTimeNanos += masterClockOffsetNanos;
 		}
-		AudioTime nextNextAudioSliceTime = time.add(duration);
-		nextAudioSliceDuration = duration;
+		long sliceDurationNanos = duration.getNanoTime();
+		long nextSliceTimeNanos = sliceTimeNanos + sliceDurationNanos;
+		nextAudioSliceDurationNanos = sliceDurationNanos;
+		AudioTime adjustedTimeForDebug = null;
 
 		if (DEBUG_SYNTH_TIMING) {
 			if (debugShowAudioTime > 0) {
+				AudioTime displayTime = time;
+				if (masterClockOffsetNanos > 0) {
+					adjustedTimeForDebug = new AudioTime(sliceTimeNanos);
+					displayTime = adjustedTimeForDebug;
+				}
 				debug("Synth.newAudioSlice: Audio Time: "
-						+ time + ", queue size="
+						+ displayTime + ", queue size="
 						+ eventQueue.size());
 				if (masterClock != null) {
 					long master = masterClock.getAudioTime().getMillisTime() + (masterClockOffsetNanos / 1000000L);
-					long diff = (time.getMillisTime() - master);
+					long diff = (sliceTimeNanos / 1000000L) - master;
 					debug("           master:" + master
 							+ "ms, masterSliceDiff=" + diff + "ms.");
 					if (diff > (fixedDelayNanos / 1000000)) {
@@ -1181,7 +1192,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 
 		if (!isNoteDispatcherRunning()) {
 			synchronized (eventQueue) {
-				while (eventQueue.lastIsEarlier(nextNextAudioSliceTime)) {
+				while (eventQueue.lastIsEarlier(nextSliceTimeNanos)) {
 					dispatchEvent(eventQueue.poll());
 				}
 			}
@@ -1190,12 +1201,17 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		if (getRenderThreadCount() > 0) {
 			AudioMixer localMixer = getMixer();
 			if (localMixer.getCount() > ASYNCH_RENDER_STREAM_THRESHOLD) {
-				asynchRenderer.dispatch(time, localMixer.getRenderables());
+				AudioTime renderTime = time;
+				if (masterClockOffsetNanos > 0) {
+					renderTime = adjustedTimeForDebug != null
+							? adjustedTimeForDebug : new AudioTime(sliceTimeNanos);
+				}
+				asynchRenderer.dispatch(renderTime, localMixer.getRenderables());
 			}
 		}
 
 		// eventually, commit the new nextAudioSlice time
-		nextAudioSliceTime = nextNextAudioSliceTime;
+		nextAudioSliceTimeNanos = nextSliceTimeNanos;
 	}
 
 	// listener EventDispatcher
@@ -1207,7 +1223,8 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			listeners.get(0).midiEventPlayed(time, me.getSource(), mc,
 					me.getStatus(), me.getData1(), me.getData2());
 		} else {
-			for (SynthesizerListener L : listeners) {
+			for (int i = 0; i < size; i++) {
+				SynthesizerListener L = listeners.get(i);
 				L.midiEventPlayed(time, me.getSource(), mc, me.getStatus(),
 						me.getData1(), me.getData2());
 			}
@@ -1425,6 +1442,14 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		}
 
 		/**
+		 * Primitive-time variant used by the audio-slice hot path.
+		 */
+		public synchronized boolean lastIsEarlier(long nanoTime) {
+			return list.size() > 0
+					&& list.getLast().getTime().getNanoTime() < nanoTime;
+		}
+
+		/**
 		 * @return Retrieves and removes the head of this queue, or null if this
 		 *         queue is empty.
 		 */
@@ -1540,8 +1565,8 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 						// one buffer after "nextAudioSliceTime"!
 						// also start events a little ahead so that they can't
 						// come too late
-						event = eventQueue.pollIfEarlier(nextAudioSliceTime.getNanoTime()
-								+ nextAudioSliceDuration.getNanoTime());
+						event = eventQueue.pollIfEarlier(nextAudioSliceTimeNanos
+								+ nextAudioSliceDurationNanos);
 						if (event != null) {
 							dispatchEvent(event);
 						} else {

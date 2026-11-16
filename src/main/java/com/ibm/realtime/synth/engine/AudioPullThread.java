@@ -466,8 +466,9 @@ public class AudioPullThread implements Runnable, AudioClock {
 
 					AudioTime time = new AudioTime(samples, sampleRate);
 
-					for (AudioRendererListener arl : listeners) {
-						arl.newAudioSlice(time, duration);
+					int listenerCount = listeners.size();
+					for (int listenerIndex = 0; listenerIndex < listenerCount; listenerIndex++) {
+						listeners.get(listenerIndex).newAudioSlice(time, duration);
 					}
 
 					// wait for input to become ready
