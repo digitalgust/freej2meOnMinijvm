@@ -3,6 +3,6 @@ app=com.ebsee.emu.J2meEmu
 icon=/j2meemu.png
 orientation=v
 desc=J2ME Emulator.\nChange Log:\nAdd web browser.\nFix screen flicker.\n
-version=1.3.0.115
+version=1.3.0.117
 upgradeurl=http://down.ysbit.cn/static/apps/j2meemu.jar
 webclaw.key=wc_f7480cfe70f9a3e9317382d56d29c469
