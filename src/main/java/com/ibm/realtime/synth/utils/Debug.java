@@ -27,8 +27,8 @@ package com.ibm.realtime.synth.utils;
 
 public class Debug {
 
-	public static boolean DEBUG_MASTER_SWITCH = true;
-	public static boolean DEBUG_SHOW_ERRORS = true;
+	public static boolean DEBUG_MASTER_SWITCH = false;
+	public static boolean DEBUG_SHOW_ERRORS = false;
 
 	public static final void debug(String s) {
 		if (DEBUG_MASTER_SWITCH) out(s);

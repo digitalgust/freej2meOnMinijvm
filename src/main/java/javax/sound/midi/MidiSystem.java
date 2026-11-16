@@ -16,10 +16,11 @@ import java.util.List;
 public class MidiSystem {
     private static final String SOUNDFONT_PROPERTY = "freej2me.midi.soundfont";
     private static final String MASTER_VOLUME_PROPERTY = "freej2me.midi.masterVolume";
-    private static final double DEFAULT_MASTER_VOLUME = 1.5;
+    private static final double DEFAULT_MASTER_VOLUME = 1.0;
 //    private static final String BUNDLED_SOUNDFONT = "/midi/FM_GM_SoundFont_v0_2_1_mini.sf2";
-    private static final String BUNDLED_SOUNDFONT = "/midi/FM_GM_SoundFont_v0_4_1_Balanced.sf2";
-//    private static final String BUNDLED_SOUNDFONT = "/midi/TimGM6mb.sf2";
+//    private static final String BUNDLED_SOUNDFONT = "/midi/FM_GM_SoundFont_v0_4_1_Balanced.sf2";
+    private static final String BUNDLED_SOUNDFONT = "/midi/4gmgsmt.sf2";
+//    private static final String BUNDLED_SOUNDFONT = "/midi/gm_1.sf2";
     private static SoundFontSoundbank cachedSoundbank;
     private static final Object ACTIVE_SEQUENCERS_LOCK = new Object();
     private static final List<SequencerStub> activeSequencers = new ArrayList<SequencerStub>();
