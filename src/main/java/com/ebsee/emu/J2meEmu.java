@@ -225,6 +225,7 @@ public class J2meEmu extends GApplication implements XuiAppHolder {
 
     @Override
     public void onClose() {
+        FreeJ2ME.shutdownAllInstances();
         MidiSystem.shutdownAll();
         if (browser != null) browser.close();
         if (gform != null) gform.resetVirtualInput();
