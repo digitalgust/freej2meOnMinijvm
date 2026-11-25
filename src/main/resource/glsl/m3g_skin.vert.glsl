@@ -14,10 +14,16 @@ layout(location = 3) in vec2 aTexCoord0;
 layout(location = 4) in vec2 aTexCoord1;
 layout(location = 5) in vec4 aBoneIndices;
 layout(location = 6) in vec4 aBoneWeights;
+layout(location = 7) in mat4 aInstanceModel;
+layout(location = 11) in float aBonePaletteOffset;
 
 uniform mat4 uMvp;
 uniform mat4 uModel;
 uniform mat4 uModelView;
+uniform mat4 uCameraMatrix;
+uniform mat4 uViewMatrix;
+uniform samplerBuffer uBonePalette;
+uniform int uUseInstances;
 uniform float uDepthRangeScale;
 uniform float uDepthRangeBias;
 uniform int uLightingEnabled;
@@ -44,12 +50,19 @@ out vec2 vTexCoord0;
 out vec2 vTexCoord1;
 out float vFogDistance;
 
+vec4 getBoneRow(int rowIndex) {
+    if (uUseInstances != 0) {
+        return texelFetch(uBonePalette, int(aBonePaletteOffset + 0.5) + rowIndex);
+    }
+    return uBoneRows[rowIndex];
+}
+
 vec4 applyBonePosition(int boneIndex, vec4 position) {
     int base = boneIndex * 3;
     return vec4(
-        dot(uBoneRows[base], position),
-        dot(uBoneRows[base + 1], position),
-        dot(uBoneRows[base + 2], position),
+        dot(getBoneRow(base), position),
+        dot(getBoneRow(base + 1), position),
+        dot(getBoneRow(base + 2), position),
         1.0
     );
 }
@@ -58,9 +71,9 @@ vec3 applyBoneNormal(int boneIndex, vec3 normal) {
     int base = boneIndex * 3;
     vec4 direction = vec4(normal, 0.0);
     return vec3(
-        dot(uBoneRows[base], direction),
-        dot(uBoneRows[base + 1], direction),
-        dot(uBoneRows[base + 2], direction)
+        dot(getBoneRow(base), direction),
+        dot(getBoneRow(base + 1), direction),
+        dot(getBoneRow(base + 2), direction)
     );
 }
 
@@ -167,8 +180,9 @@ void main() {
     vec3 localNormal;
     computeSkinning(localPosition, localNormal);
 
-    vec4 worldPosition = uModel * localPosition;
-    vec3 worldNormal = normalize((uModel * vec4(localNormal, 0.0)).xyz);
+    mat4 modelMatrix = uUseInstances != 0 ? aInstanceModel : uModel;
+    vec4 worldPosition = modelMatrix * localPosition;
+    vec3 worldNormal = normalize((modelMatrix * vec4(localNormal, 0.0)).xyz);
 
     vec4 trackedColor = aColor;
     vec4 baseColor = uHasVertexColor != 0 ? trackedColor : uBaseColor;
@@ -177,8 +191,12 @@ void main() {
         finalColor = computeLitColor(worldPosition.xyz, worldNormal, trackedColor);
     }
 
-    vec4 eyePosition = uModelView * localPosition;
-    gl_Position = uMvp * localPosition;
+    vec4 eyePosition = uUseInstances != 0
+            ? uViewMatrix * worldPosition
+            : uModelView * localPosition;
+    gl_Position = uUseInstances != 0
+            ? uCameraMatrix * worldPosition
+            : uMvp * localPosition;
     gl_Position.z = gl_Position.z * uDepthRangeScale + gl_Position.w * uDepthRangeBias;
     vColor = finalColor;
     vTexCoord0 = aTexCoord0;

@@ -49,7 +49,10 @@ import static org.mini.gl.GL.GL_SRC_COLOR;
 import static org.mini.gl.GL.GL_STATIC_DRAW;
 import static org.mini.gl.GL.GL_TEXTURE0;
 import static org.mini.gl.GL.GL_TEXTURE1;
+import static org.mini.gl.GL.GL_TEXTURE2;
 import static org.mini.gl.GL.GL_TEXTURE_2D;
+import static org.mini.gl.GL.GL_TEXTURE_BUFFER;
+import static org.mini.gl.GL.GL_RGBA32F;
 import static org.mini.gl.GL.GL_TEXTURE_MAG_FILTER;
 import static org.mini.gl.GL.GL_TEXTURE_MIN_FILTER;
 import static org.mini.gl.GL.GL_TEXTURE_WRAP_S;
@@ -85,6 +88,7 @@ import static org.mini.gl.GL.glDetachShader;
 import static org.mini.gl.GL.glDisable;
 import static org.mini.gl.GL.glDisableVertexAttribArray;
 import static org.mini.gl.GL.glDrawArrays;
+import static org.mini.gl.GL.glDrawArraysInstanced;
 import static org.mini.gl.GL.glEnable;
 import static org.mini.gl.GL.glEnableVertexAttribArray;
 import static org.mini.gl.GL.glFrontFace;
@@ -110,7 +114,9 @@ import static org.mini.gl.GL.glUniform4f;
 import static org.mini.gl.GL.glUniform4fv;
 import static org.mini.gl.GL.glUniformMatrix4fv;
 import static org.mini.gl.GL.glUseProgram;
+import static org.mini.gl.GL.glTexBuffer;
 import static org.mini.gl.GL.glVertexAttribPointer;
+import static org.mini.gl.GL.glVertexAttribDivisor;
 import static org.mini.gl.GL.glViewport;
 import static org.mini.gl.GL.glBindTexture;
 import static org.mini.gl.GL.glTexImage2D;
@@ -469,10 +475,10 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private final TriangleStripArray triangles;
 
         GeometryKey(RenderItem item) {
-            boolean stableMeshAnchor = item.mesh != null;
-            this.useMeshAnchor = stableMeshAnchor;
-            this.anchor = stableMeshAnchor ? item.mesh : item.vertices;
-            this.submeshIndex = stableMeshAnchor ? item.submeshIndex : -1;
+            boolean mutableMeshGeometry = item.mesh instanceof MorphingMesh;
+            this.useMeshAnchor = mutableMeshGeometry;
+            this.anchor = mutableMeshGeometry ? item.mesh : item.vertices;
+            this.submeshIndex = mutableMeshGeometry ? item.submeshIndex : -1;
             this.vertices = item.vertices;
             this.triangles = item.triangles;
         }
@@ -523,6 +529,65 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private final MeshGeometry geometry = new MeshGeometry();
     }
 
+    private static final class SkinGeometryKey {
+        private final Object skinLayout;
+        private final VertexBuffer vertices;
+        private final TriangleStripArray triangles;
+        private final Appearance appearance;
+
+        SkinGeometryKey(RenderItem item) {
+            skinLayout = item.skinnedMesh.getGpuGeometrySharingKey();
+            vertices = item.vertices;
+            triangles = item.triangles;
+            appearance = item.appearance;
+        }
+
+        public int hashCode() {
+            int hash = System.identityHashCode(skinLayout);
+            hash = hash * 31 + System.identityHashCode(vertices);
+            hash = hash * 31 + System.identityHashCode(triangles);
+            return hash * 31 + System.identityHashCode(appearance);
+        }
+
+        public boolean equals(Object object) {
+            if (!(object instanceof SkinGeometryKey)) {
+                return false;
+            }
+            SkinGeometryKey other = (SkinGeometryKey) object;
+            return skinLayout == other.skinLayout
+                    && vertices == other.vertices
+                    && triangles == other.triangles
+                    && appearance == other.appearance;
+        }
+    }
+
+    private static final class SkinGeometry {
+        private final int[] vbo = new int[]{0};
+        private int vertexCount;
+        private boolean hasVertexColor;
+        private boolean hasNormals;
+        private int vertexBufferRevision = -1;
+        private VertexArray positions;
+        private int positionsRevision = -1;
+        private VertexArray normals;
+        private int normalsRevision = -1;
+        private VertexArray colors;
+        private int colorsRevision = -1;
+        private final VertexArray[] texCoords = new VertexArray[GlRenderer.TEXTURE_UNIT_COUNT];
+        private final int[] texCoordRevisions = new int[]{-1, -1};
+        private final boolean[] texturedUnits = new boolean[GlRenderer.TEXTURE_UNIT_COUNT];
+        private final float[][] textureMatrices = new float[][]{
+                new float[16], new float[16]
+        };
+    }
+
+    private static final class SkinDrawData {
+        private final boolean[] texturedUnits = new boolean[GlRenderer.TEXTURE_UNIT_COUNT];
+        private int baseColor;
+        private boolean hasVertexColor;
+        private boolean lightingEnabled;
+    }
+
     private static final class SkinTriangleData {
         private final float[] vertices;
         private final int vertexCount;
@@ -564,6 +629,10 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
 
         private final int[] vao = new int[]{0};
         private final int[] vbo = new int[]{0};
+        private final int[] skinInstancedVao = new int[]{0};
+        private final int[] skinInstanceVbo = new int[]{0};
+        private final int[] skinPaletteBuffer = new int[]{0};
+        private final int[] skinPaletteTexture = new int[]{0};
         private final int[] backgroundTexture = new int[]{0};
         private final float[] backgroundVertices = new float[4 * COMPONENTS_PER_VERTEX];
         private final float[] identityMatrix = new float[16];
@@ -575,6 +644,9 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private final Transform textureTransformScratch = new Transform();
         private final float[] textureVector = new float[4];
         private final float[] skinBoneRows = new float[MAX_GPU_BONES * 12];
+        private float[] skinInstanceData = new float[0];
+        private float[] skinPaletteData = new float[0];
+        private final SkinDrawData skinDrawDataScratch = new SkinDrawData();
         private final int[] skinLightModes = new int[MAX_GPU_LIGHTS];
         private final float[] skinLightColors = new float[MAX_GPU_LIGHTS * 4];
         private final float[] skinLightPositions = new float[MAX_GPU_LIGHTS * 4];
@@ -583,6 +655,7 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private final float[] skinLightSpots = new float[MAX_GPU_LIGHTS * 4];
         private final java.util.Hashtable textureCache = new java.util.Hashtable();
         private final java.util.HashMap geometryCache = new java.util.HashMap();
+        private final java.util.HashMap skinGeometryCache = new java.util.HashMap();
         private GLFrameBuffer frameBuffer;
         private int program;
         private int skinProgram;
@@ -653,6 +726,10 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private int skinLightAttenuationsLocation = -1;
         private int skinLightSpotsLocation = -1;
         private int skinBoneRowsLocation = -1;
+        private int skinInstancedLocation = -1;
+        private int skinCameraMatrixLocation = -1;
+        private int skinViewMatrixLocation = -1;
+        private int skinBonePaletteSamplerLocation = -1;
         private int frameWidth = -1;
         private int frameHeight = -1;
         private byte[] rgbaReadBackBuffer = new byte[0];
@@ -712,7 +789,25 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 prepareCamera(owner);
                 frameDrawSequence = 0;
                 for (int i = 0; i < frame.items.size(); i++) {
-                    renderItem(owner, frame.items.elementAt(i));
+                    RenderItem item = frame.items.elementAt(i);
+                    if (isOpaqueSkinnedBatchItem(owner, item)) {
+                        // Collapse adjacent compatible items only, so opaque batching
+                        // does not reorder them across other world draws.
+                        int end = i + 1;
+                        while (end < frame.items.size()) {
+                            RenderItem next = frame.items.elementAt(end);
+                            if (!isOpaqueSkinnedBatchItem(owner, next)
+                                    || !sameSkinGeometryGroup(item, next)) {
+                                break;
+                            }
+                            end++;
+                        }
+                        if (end - i > 1 && renderSkinnedBatch(owner, frame.items, i, end)) {
+                            i = end - 1;
+                            continue;
+                        }
+                    }
+                    renderItem(owner, item);
                 }
                 readBack(owner, target);
             } finally {
@@ -815,10 +910,32 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 skinLightAttenuationsLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uLightAttenuation[0]"));
                 skinLightSpotsLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uLightSpot[0]"));
                 skinBoneRowsLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uBoneRows[0]"));
+                skinInstancedLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uUseInstances"));
+                skinCameraMatrixLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uCameraMatrix"));
+                skinViewMatrixLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uViewMatrix"));
+                skinBonePaletteSamplerLocation = glGetUniformLocation(skinProgram, toCstyleBytes("uBonePalette"));
             }
             if (vao[0] == 0) {
                 glGenVertexArrays(1, vao, 0);
                 glGenBuffers(1, vbo, 0);
+                glGenVertexArrays(1, skinInstancedVao, 0);
+                glGenBuffers(1, skinInstanceVbo, 0);
+                glGenBuffers(1, skinPaletteBuffer, 0);
+                glGenTextures(1, skinPaletteTexture, 0);
+
+                glBindVertexArray(skinInstancedVao[0]);
+                for (int attribute = 7; attribute <= 11; attribute++) {
+                    glEnableVertexAttribArray(attribute);
+                    glVertexAttribDivisor(attribute, 1);
+                }
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_BUFFER, skinPaletteTexture[0]);
+                glBindBuffer(GL_TEXTURE_BUFFER, skinPaletteBuffer[0]);
+                glBufferData(GL_TEXTURE_BUFFER, 4L * FLOAT_SIZE, new float[4], 0, GL_DYNAMIC_DRAW);
+                glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, skinPaletteBuffer[0]);
+                glBindBuffer(GL_TEXTURE_BUFFER, 0);
+                glBindTexture(GL_TEXTURE_BUFFER, 0);
+                glBindVertexArray(0);
             }
         }
 
@@ -843,7 +960,10 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             private int[] vertexArrayBinding = new int[1];
             private int[] arrayBufferBinding = new int[1];
             private int[] elementArrayBufferBinding = new int[1];
+            private int[] textureBufferObjectBinding = new int[1];
             private int[] textureBinding0 = new int[1];
+            private int[] textureBinding1 = new int[1];
+            private int[] textureBufferBinding2 = new int[1];
             private int[] blendSrcRgb = new int[1];
             private int[] blendDstRgb = new int[1];
             private int[] blendSrcAlpha = new int[1];
@@ -869,7 +989,14 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_VERTEX_ARRAY_BINDING, vertexArrayBinding, 0);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_ARRAY_BUFFER_BINDING, arrayBufferBinding, 0);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_ELEMENT_ARRAY_BUFFER_BINDING, elementArrayBufferBinding, 0);
+                org.mini.gl.GL.glGetIntegerv(GL_TEXTURE_BUFFER, textureBufferObjectBinding, 0);
+                org.mini.gl.GL.glActiveTexture(GL_TEXTURE0);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_TEXTURE_BINDING_2D, textureBinding0, 0);
+                org.mini.gl.GL.glActiveTexture(GL_TEXTURE1);
+                org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_TEXTURE_BINDING_2D, textureBinding1, 0);
+                org.mini.gl.GL.glActiveTexture(GL_TEXTURE2);
+                org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_TEXTURE_BINDING_BUFFER, textureBufferBinding2, 0);
+                org.mini.gl.GL.glActiveTexture(activeTexture[0]);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_BLEND_SRC_RGB, blendSrcRgb, 0);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_BLEND_DST_RGB, blendDstRgb, 0);
                 org.mini.gl.GL.glGetIntegerv(org.mini.gl.GL.GL_BLEND_SRC_ALPHA, blendSrcAlpha, 0);
@@ -897,10 +1024,13 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 org.mini.gl.GL.glBindVertexArray(vertexArrayBinding[0]);
                 org.mini.gl.GL.glBindBuffer(GL_ARRAY_BUFFER, arrayBufferBinding[0]);
                 org.mini.gl.GL.glBindBuffer(org.mini.gl.GL.GL_ELEMENT_ARRAY_BUFFER, elementArrayBufferBinding[0]);
-                // GL_TEXTURE0 上的纹理绑定（捕获时的 active texture 可能不是 TEXTURE0，
-                // 因此先切回 TEXTURE0 还原其绑定，再切回原 active texture）。
+                org.mini.gl.GL.glBindBuffer(GL_TEXTURE_BUFFER, textureBufferObjectBinding[0]);
                 org.mini.gl.GL.glActiveTexture(org.mini.gl.GL.GL_TEXTURE0);
                 org.mini.gl.GL.glBindTexture(GL_TEXTURE_2D, textureBinding0[0]);
+                org.mini.gl.GL.glActiveTexture(GL_TEXTURE1);
+                org.mini.gl.GL.glBindTexture(GL_TEXTURE_2D, textureBinding1[0]);
+                org.mini.gl.GL.glActiveTexture(GL_TEXTURE2);
+                org.mini.gl.GL.glBindTexture(GL_TEXTURE_BUFFER, textureBufferBinding2[0]);
                 org.mini.gl.GL.glActiveTexture(activeTexture[0]);
                 org.mini.gl.GL.glBlendFuncSeparate(blendSrcRgb[0], blendDstRgb[0], blendSrcAlpha[0], blendDstAlpha[0]);
                 org.mini.gl.GL.glBlendEquationSeparate(blendEquationRgb[0], blendEquationAlpha[0]);
@@ -1049,10 +1179,11 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             if (skinningData == null || skinningData.boneCount > MAX_GPU_BONES) {
                 return;
             }
-            SkinTriangleData triangleData = buildSkinnedTriangleData(owner, item, skinningData);
-            if (triangleData.vertexCount == 0) {
+            SkinGeometry geometry = getOrCreateSkinnedGeometry(owner, item, skinningData);
+            if (geometry.vertexCount == 0) {
                 return;
             }
+            SkinDrawData drawData = prepareSkinDrawData(owner, item, geometry);
 
             Transform combined = new Transform();
             combined.set(cameraMatrix);
@@ -1072,21 +1203,16 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
 
             applyAppearance(owner, item.appearance, item);
             glUseProgram(skinProgram);
+            glUniform1i(skinInstancedLocation, 0);
             glUniformMatrix4fv(skinMvpLocation, 1, GL_TRUE, modelViewProjection, 0);
             glUniformMatrix4fv(skinModelLocation, 1, GL_TRUE, modelMatrix, 0);
             glUniformMatrix4fv(skinModelViewLocation, 1, GL_TRUE, modelViewMatrix, 0);
-            glUniform1f(skinAlphaThresholdLocation, resolveAlphaThreshold(item.appearance));
-            glUniform1f(skinDepthRangeScaleLocation, owner.getDepthRangeFar() - owner.getDepthRangeNear());
-            glUniform1f(skinDepthRangeBiasLocation, owner.getDepthRangeFar() + owner.getDepthRangeNear() - 1f);
-            applySkinFog(item.appearance);
-            applySkinTextures(item.appearance, triangleData.texturedUnits);
-            applySkinMaterial(owner, item, triangleData);
-            applySkinLights(owner);
+            applySkinCommonState(owner, item, drawData);
             uploadBoneRows(skinningData.boneMatrices, skinningData.boneCount);
+            bindSkinPaletteTexture();
 
             glBindVertexArray(vao[0]);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-            glBufferData(GL_ARRAY_BUFFER, triangleData.vertices.length * FLOAT_SIZE, triangleData.vertices, 0, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, geometry.vbo[0]);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 0);
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 3 * FLOAT_SIZE);
@@ -1102,7 +1228,7 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 18 * FLOAT_SIZE);
             glEnableVertexAttribArray(6);
             ++frameDrawSequence;
-            glDrawArrays(GL_TRIANGLES, 0, triangleData.vertexCount);
+            glDrawArrays(GL_TRIANGLES, 0, geometry.vertexCount);
             glDisableVertexAttribArray(6);
             glDisableVertexAttribArray(5);
             glDisableVertexAttribArray(4);
@@ -1111,6 +1237,258 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             glDisableVertexAttribArray(1);
             glDisableVertexAttribArray(0);
             glBindVertexArray(0);
+        }
+
+        private boolean isOpaqueSkinnedBatchItem(Graphics3D owner, RenderItem item) {
+            if (item.skinnedMesh == null || !owner.isDepthBufferEnabled()) {
+                return false;
+            }
+            CompositingMode compositingMode = item.appearance != null ? item.appearance.getCompositingMode() : null;
+            return compositingMode == null
+                    || (compositingMode.getBlending() == CompositingMode.REPLACE
+                    && compositingMode.isDepthTestEnabled()
+                    && compositingMode.isDepthWriteEnabled());
+        }
+
+        private boolean sameSkinGeometryGroup(RenderItem a, RenderItem b) {
+            return a.skinnedMesh.getGpuGeometrySharingKey() == b.skinnedMesh.getGpuGeometrySharingKey()
+                    && a.vertices == b.vertices
+                    && a.triangles == b.triangles
+                    && a.appearance == b.appearance;
+        }
+
+        private boolean renderSkinnedBatch(Graphics3D owner, Vector<RenderItem> items, int start, int end) {
+            RenderItem first = items.elementAt(start);
+            SkinnedMesh.GpuSkinningData firstData = first.skinnedMesh.getGpuSkinningData(MAX_GPU_INFLUENCES);
+            if (firstData == null || firstData.boneCount > MAX_GPU_BONES || firstData.boneCount == 0) {
+                return false;
+            }
+            int instanceCount = end - start;
+            int floatsPerInstance = 17;
+            int paletteFloatsPerInstance = firstData.boneCount * 12;
+            ensureSkinBatchCapacity(instanceCount * floatsPerInstance, instanceCount * paletteFloatsPerInstance);
+
+            for (int instance = 0; instance < instanceCount; instance++) {
+                RenderItem item = items.elementAt(start + instance);
+                SkinnedMesh.GpuSkinningData skinningData = instance == 0
+                        ? firstData : item.skinnedMesh.getGpuSkinningData(MAX_GPU_INFLUENCES);
+                if (skinningData == null || skinningData.boneCount != firstData.boneCount
+                        || skinningData.boneIndices.length != firstData.boneIndices.length
+                        || skinningData.boneWeights.length != firstData.boneWeights.length) {
+                    return false;
+                }
+
+                float[] model = item.transform != null ? item.transform.getMatrix() : identityMatrix;
+                int instanceOffset = instance * floatsPerInstance;
+                for (int column = 0; column < 4; column++) {
+                    for (int row = 0; row < 4; row++) {
+                        skinInstanceData[instanceOffset + column * 4 + row] = model[row * 4 + column];
+                    }
+                }
+                skinInstanceData[instanceOffset + 16] = instance * firstData.boneCount * 3;
+
+                int paletteOffset = instance * paletteFloatsPerInstance;
+                packBoneRows(skinningData.boneMatrices, skinningData.boneCount, skinPaletteData, paletteOffset);
+            }
+
+            SkinGeometry geometry = getOrCreateSkinnedGeometry(owner, first, firstData);
+            if (geometry.vertexCount == 0) {
+                return true;
+            }
+            SkinDrawData drawData = prepareSkinDrawData(owner, first, geometry);
+
+            applyAppearance(owner, first.appearance, first);
+            glUseProgram(skinProgram);
+            glUniform1i(skinInstancedLocation, 1);
+            glUniformMatrix4fv(skinCameraMatrixLocation, 1, GL_TRUE, cameraMatrix, 0);
+            glUniformMatrix4fv(skinViewMatrixLocation, 1, GL_TRUE, viewMatrix, 0);
+            glUniform1i(skinBonePaletteSamplerLocation, 2);
+            applySkinCommonState(owner, first, drawData);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_BUFFER, skinPaletteTexture[0]);
+            glBindBuffer(GL_TEXTURE_BUFFER, skinPaletteBuffer[0]);
+            glBufferData(GL_TEXTURE_BUFFER, (long) instanceCount * paletteFloatsPerInstance * FLOAT_SIZE,
+                    skinPaletteData, 0, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_TEXTURE_BUFFER, 0);
+
+            glBindVertexArray(skinInstancedVao[0]);
+            glBindBuffer(GL_ARRAY_BUFFER, geometry.vbo[0]);
+            bindSkinVertexAttributes();
+            glBindBuffer(GL_ARRAY_BUFFER, skinInstanceVbo[0]);
+            glBufferData(GL_ARRAY_BUFFER, (long) instanceCount * floatsPerInstance * FLOAT_SIZE,
+                    skinInstanceData, 0, GL_DYNAMIC_DRAW);
+            int instanceStride = floatsPerInstance * FLOAT_SIZE;
+            for (int column = 0; column < 4; column++) {
+                int attribute = 7 + column;
+                glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, instanceStride, null,
+                        column * 4 * FLOAT_SIZE);
+                glEnableVertexAttribArray(attribute);
+                glVertexAttribDivisor(attribute, 1);
+            }
+            glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, instanceStride, null, 16 * FLOAT_SIZE);
+            glEnableVertexAttribArray(11);
+            glVertexAttribDivisor(11, 1);
+
+            frameDrawSequence += instanceCount;
+            glDrawArraysInstanced(GL_TRIANGLES, 0, geometry.vertexCount, instanceCount);
+            glBindVertexArray(0);
+            return true;
+        }
+
+        private void applySkinCommonState(Graphics3D owner, RenderItem item, SkinDrawData drawData) {
+            glUniform1f(skinAlphaThresholdLocation, resolveAlphaThreshold(item.appearance));
+            glUniform1f(skinDepthRangeScaleLocation, owner.getDepthRangeFar() - owner.getDepthRangeNear());
+            glUniform1f(skinDepthRangeBiasLocation, owner.getDepthRangeFar() + owner.getDepthRangeNear() - 1f);
+            applySkinFog(item.appearance);
+            applySkinTextures(item.appearance, drawData.texturedUnits);
+            applySkinMaterial(owner, item, drawData);
+            applySkinLights(owner);
+        }
+
+        private void bindSkinVertexAttributes() {
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 3 * FLOAT_SIZE);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 6 * FLOAT_SIZE);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 10 * FLOAT_SIZE);
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 12 * FLOAT_SIZE);
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 14 * FLOAT_SIZE);
+            glEnableVertexAttribArray(5);
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, SKIN_STRIDE_BYTES, null, 18 * FLOAT_SIZE);
+            glEnableVertexAttribArray(6);
+        }
+
+        private void ensureSkinBatchCapacity(int instanceFloats, int paletteFloats) {
+            if (skinInstanceData.length < instanceFloats) {
+                skinInstanceData = new float[Math.max(instanceFloats, Math.max(272, skinInstanceData.length * 2))];
+            }
+            if (skinPaletteData.length < paletteFloats) {
+                skinPaletteData = new float[Math.max(paletteFloats, Math.max(384, skinPaletteData.length * 2))];
+            }
+        }
+
+        private void packBoneRows(float[] boneMatrices, int boneCount, float[] destination, int destinationOffset) {
+            for (int bone = 0; bone < boneCount; bone++) {
+                int src = bone * 16;
+                int dst = destinationOffset + bone * 12;
+                System.arraycopy(boneMatrices, src, destination, dst, 4);
+                System.arraycopy(boneMatrices, src + 4, destination, dst + 4, 4);
+                System.arraycopy(boneMatrices, src + 8, destination, dst + 8, 4);
+            }
+        }
+
+        private SkinGeometry getOrCreateSkinnedGeometry(Graphics3D owner, RenderItem item,
+                                                         SkinnedMesh.GpuSkinningData skinningData) {
+            SkinGeometryKey key = new SkinGeometryKey(item);
+            SkinGeometry geometry = (SkinGeometry) skinGeometryCache.get(key);
+            boolean newEntry = geometry == null;
+            if (newEntry) {
+                geometry = new SkinGeometry();
+                skinGeometryCache.put(key, geometry);
+            }
+            if (newEntry || isSkinnedGeometryStale(geometry, item)) {
+                SkinTriangleData packed = buildSkinnedTriangleData(owner, item, skinningData);
+                if (geometry.vbo[0] == 0) {
+                    glGenBuffers(1, geometry.vbo, 0);
+                }
+                glBindBuffer(GL_ARRAY_BUFFER, geometry.vbo[0]);
+                glBufferData(GL_ARRAY_BUFFER, (long) packed.vertices.length * FLOAT_SIZE,
+                        packed.vertices, 0, GL_STATIC_DRAW);
+                geometry.vertexCount = packed.vertexCount;
+                geometry.hasVertexColor = packed.hasVertexColor;
+                geometry.hasNormals = item.vertices.getNormals() != null;
+                updateSkinGeometrySourceState(geometry, item, packed.texturedUnits);
+            }
+            return geometry;
+        }
+
+        private boolean isSkinnedGeometryStale(SkinGeometry geometry, RenderItem item) {
+            VertexBuffer vertices = item.vertices;
+            if (geometry.vertexBufferRevision != vertices.getRevision()) {
+                return true;
+            }
+            VertexArray positions = vertices.getPositions(null);
+            if (geometry.positions != positions || geometry.positionsRevision != getArrayRevision(positions)) {
+                return true;
+            }
+            VertexArray normals = vertices.getNormals();
+            if (geometry.normals != normals || geometry.normalsRevision != getArrayRevision(normals)) {
+                return true;
+            }
+            VertexArray colors = vertices.getColors();
+            if (geometry.colors != colors || geometry.colorsRevision != getArrayRevision(colors)) {
+                return true;
+            }
+            for (int unit = 0; unit < TEXTURE_UNIT_COUNT; unit++) {
+                VertexArray texCoords = vertices.getTexCoords(unit, null);
+                if (geometry.texCoords[unit] != texCoords
+                        || geometry.texCoordRevisions[unit] != getArrayRevision(texCoords)) {
+                    return true;
+                }
+                Texture2D texture = item.appearance != null ? item.appearance.getTexture(unit) : null;
+                boolean textured = texture != null && texCoords != null && texture.getImage() != null;
+                if (geometry.texturedUnits[unit] != textured) {
+                    return true;
+                }
+                if (textured) {
+                    texture.getCompositeTransform(textureTransformScratch);
+                    float[] current = textureTransformScratch.getMatrix();
+                    float[] cached = geometry.textureMatrices[unit];
+                    for (int component = 0; component < 16; component++) {
+                        if (current[component] != cached[component]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void updateSkinGeometrySourceState(SkinGeometry geometry, RenderItem item,
+                                                   boolean[] texturedUnits) {
+            VertexBuffer vertices = item.vertices;
+            geometry.vertexBufferRevision = vertices.getRevision();
+            geometry.positions = vertices.getPositions(null);
+            geometry.positionsRevision = getArrayRevision(geometry.positions);
+            geometry.normals = vertices.getNormals();
+            geometry.normalsRevision = getArrayRevision(geometry.normals);
+            geometry.colors = vertices.getColors();
+            geometry.colorsRevision = getArrayRevision(geometry.colors);
+            for (int unit = 0; unit < TEXTURE_UNIT_COUNT; unit++) {
+                VertexArray texCoords = vertices.getTexCoords(unit, null);
+                geometry.texCoords[unit] = texCoords;
+                geometry.texCoordRevisions[unit] = getArrayRevision(texCoords);
+                geometry.texturedUnits[unit] = texturedUnits[unit];
+                if (texturedUnits[unit]) {
+                    Texture2D texture = item.appearance != null ? item.appearance.getTexture(unit) : null;
+                    texture.getCompositeTransform(textureTransformScratch);
+                    System.arraycopy(textureTransformScratch.getMatrix(), 0,
+                            geometry.textureMatrices[unit], 0, 16);
+                } else {
+                    for (int component = 0; component < 16; component++) {
+                        geometry.textureMatrices[unit][component] = (component % 5) == 0 ? 1f : 0f;
+                    }
+                }
+            }
+        }
+
+        private SkinDrawData prepareSkinDrawData(Graphics3D owner, RenderItem item, SkinGeometry geometry) {
+            SkinDrawData drawData = skinDrawDataScratch;
+            for (int unit = 0; unit < TEXTURE_UNIT_COUNT; unit++) {
+                VertexArray texCoords = item.vertices.getTexCoords(unit, null);
+                Texture2D texture = item.appearance != null ? item.appearance.getTexture(unit) : null;
+                drawData.texturedUnits[unit] = texture != null && texCoords != null && texture.getImage() != null;
+            }
+            drawData.baseColor = resolveBaseColor(item.vertices, item.appearance);
+            drawData.hasVertexColor = geometry.hasVertexColor;
+            Material material = item.appearance != null ? item.appearance.getMaterial() : null;
+            drawData.lightingEnabled = material != null && geometry.hasNormals && owner.getLightCount() > 0;
+            return drawData;
         }
 
         private SkinTriangleData buildSkinnedTriangleData(Graphics3D owner, RenderItem item, SkinnedMesh.GpuSkinningData skinningData) {
@@ -1687,7 +2065,7 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             glUniform1f(skinFogDensityLocation, fog.getDensity());
         }
 
-        private void applySkinMaterial(Graphics3D owner, RenderItem item, SkinTriangleData triangleData) {
+        private void applySkinMaterial(Graphics3D owner, RenderItem item, SkinDrawData triangleData) {
             Material material = item.appearance != null ? item.appearance.getMaterial() : null;
             glUniform1i(skinHasVertexColorLocation, triangleData.hasVertexColor ? 1 : 0);
             setColorUniform(skinBaseColorLocation, triangleData.baseColor);
@@ -1805,6 +2183,12 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 skinBoneRows[dst + 11] = boneMatrices[src + 11];
             }
             glUniform4fv(skinBoneRowsLocation, rowCount, skinBoneRows, 0);
+        }
+
+        private void bindSkinPaletteTexture() {
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_BUFFER, skinPaletteTexture[0]);
+            glUniform1i(skinBonePaletteSamplerLocation, 2);
         }
 
         private void setColorUniform(int location, int color) {
