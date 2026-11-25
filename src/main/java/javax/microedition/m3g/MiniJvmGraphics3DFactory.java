@@ -303,15 +303,8 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
             if (owner.getLightCount() > GlRenderer.MAX_GPU_LIGHTS) {
                 return "tooManyLights";
             }
-            SkinnedMesh.GpuSkinningData skinningData = item.skinnedMesh.getGpuSkinningData(GlRenderer.MAX_GPU_INFLUENCES);
-            if (skinningData == null) {
-                String reason = item.skinnedMesh.getGpuSkinningUnavailableReason(GlRenderer.MAX_GPU_INFLUENCES);
-                return reason != null ? reason : "skinningDataUnavailable";
-            }
-            if (skinningData.boneCount > GlRenderer.MAX_GPU_BONES) {
-                return "tooManyBones";
-            }
-            return null;
+            return item.skinnedMesh.getGpuSkinningUnavailableReason(
+                    GlRenderer.MAX_GPU_INFLUENCES, GlRenderer.MAX_GPU_BONES);
         }
 
         private boolean supportsTexture(Texture2D texture) {
@@ -527,27 +520,7 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
     }
 
     private static final class GeometryCacheEntry {
-        private final Mesh mesh;
-        private final VertexBuffer vertices;
-        private final TriangleStripArray triangles;
-        private final int submeshIndex;
-        private final boolean useMeshAnchor;
         private final MeshGeometry geometry = new MeshGeometry();
-
-        GeometryCacheEntry(RenderItem item) {
-            this.mesh = item.mesh;
-            this.vertices = item.vertices;
-            this.triangles = item.triangles;
-            this.submeshIndex = item.mesh != null ? item.submeshIndex : -1;
-            this.useMeshAnchor = item.mesh != null;
-        }
-
-        private boolean matches(RenderItem item) {
-            if (useMeshAnchor) {
-                return item.mesh == mesh && item.submeshIndex == submeshIndex;
-            }
-            return item.mesh == null && item.vertices == vertices && item.triangles == triangles;
-        }
     }
 
     private static final class SkinTriangleData {
@@ -609,7 +582,7 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         private final float[] skinLightAttenuations = new float[MAX_GPU_LIGHTS * 4];
         private final float[] skinLightSpots = new float[MAX_GPU_LIGHTS * 4];
         private final java.util.Hashtable textureCache = new java.util.Hashtable();
-        private final Vector geometryCache = new Vector();
+        private final java.util.HashMap geometryCache = new java.util.HashMap();
         private GLFrameBuffer frameBuffer;
         private int program;
         private int skinProgram;
@@ -1481,14 +1454,15 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
         }
 
         private MeshGeometry getOrCreateMeshGeometry(RenderItem item) {
-            GeometryCacheEntry entry = findGeometryCacheEntry(item);
+            GeometryKey key = new GeometryKey(item);
+            GeometryCacheEntry entry = (GeometryCacheEntry) geometryCache.get(key);
             MeshGeometry geometry = entry != null ? entry.geometry : null;
             boolean newKey = false;
             if (geometry == null) {
                 newKey = true;
-                entry = new GeometryCacheEntry(item);
+                entry = new GeometryCacheEntry();
                 geometry = entry.geometry;
-                geometryCache.addElement(entry);
+                geometryCache.put(key, entry);
             }
             String staleReason = newKey ? "new-key" : getGeometryStaleReason(geometry, item);
             if (staleReason != null) {
@@ -1516,16 +1490,6 @@ public final class MiniJvmGraphics3DFactory implements Graphics3D.BackendFactory
                 geometry.morphStateHash = item.mesh instanceof MorphingMesh ? computeMorphStateHash((MorphingMesh) item.mesh) : Integer.MIN_VALUE;
             }
             return geometry;
-        }
-
-        private GeometryCacheEntry findGeometryCacheEntry(RenderItem item) {
-            for (int i = 0; i < geometryCache.size(); i++) {
-                GeometryCacheEntry entry = (GeometryCacheEntry) geometryCache.elementAt(i);
-                if (entry.matches(item)) {
-                    return entry;
-                }
-            }
-            return null;
         }
 
         private String getGeometryStaleReason(MeshGeometry geometry, RenderItem item) {
