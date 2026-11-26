@@ -44,33 +44,38 @@ public class ImageIO {
             throw new IOException("image decode failed");
         }
 
-        int bitdepth = whd[2];
+        int channels = whd[2];
         if (whd[0] <= 0 || whd[1] <= 0) {
             throw new IOException("invalid image size: " + whd[0] + "x" + whd[1]);
         }
         BufferedImage img = new BufferedImage(whd[0], whd[1], BufferedImage.TYPE_INT_ARGB);
-        if (bitdepth == 4) {//argb
+        if (channels == 4) {//rgba
             img.getData().put(b);
-        } else if (bitdepth == 3) {//rgb
+        } else if (channels == 3) {//rgb
             for (int i = 0; i < b.length; i += 3) {
                 img.getData().put(b[i + 0]);
                 img.getData().put(b[i + 1]);
                 img.getData().put(b[i + 2]);
                 img.getData().put((byte) 0xff);//insert alpha
             }
-        } else if (bitdepth == 1) {//gray
+        } else if (channels == 2) {//gray and alpha
+            for (int i = 0; i < b.length; i += 2) {
+                byte gray = b[i];
+                img.getData().put(gray);
+                img.getData().put(gray);
+                img.getData().put(gray);
+                img.getData().put(b[i + 1]);
+            }
+        } else if (channels == 1) {//gray
             for (int i = 0; i < b.length; i++) {
-                if (b[i] != 0) {
-                    img.getData().put(i * 4 + 0, (byte) 0xff);//
-                    img.getData().put(i * 4 + 1, (byte) 0xff);//
-                    img.getData().put(i * 4 + 2, (byte) 0xff);//
-                    img.getData().put(i * 4 + 3, (byte) 0xff);//insert alpha
-                } else {
-                    img.getData().put(i * 4 + 3, (byte) 0x00);
-                }
+                byte gray = b[i];
+                img.getData().put(gray);
+                img.getData().put(gray);
+                img.getData().put(gray);
+                img.getData().put((byte) 0xff);
             }
         } else {
-            throw new IOException("unknown image type: " + bitdepth);
+            throw new IOException("unknown image channel count: " + channels);
         }
 
         return img;

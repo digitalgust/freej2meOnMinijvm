@@ -62,6 +62,14 @@ public class BitmapFont {
                     bitmapFile = bitmapFile.replace("\"", "");
                     bitmapFile = fntPathInJar.substring(0, fntPathInJar.lastIndexOf('/')) + "/" + bitmapFile;
                     fontShap = ImageIO.read(openRes(bitmapFile));
+                    // This grayscale atlas stores glyph coverage in brightness.
+                    // The bitmap text renderer uses the image alpha as its mask.
+                    byte[] pixels = fontShap.getData().array();
+                    for (int i = 0; i < pixels.length; i += 4) {
+                        int coverage = pixels[i] & 0xff;
+                        int alpha = pixels[i + 3] & 0xff;
+                        pixels[i + 3] = (byte) ((coverage * alpha + 127) / 255);
+                    }
                 }
             }
 
