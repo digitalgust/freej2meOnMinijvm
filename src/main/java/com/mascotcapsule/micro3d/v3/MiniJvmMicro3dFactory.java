@@ -20,10 +20,13 @@ import com.mascotcapsule.micro3d.v3.base.MiniJvmMicro3dGlBackend;
 
 public final class MiniJvmMicro3dFactory implements Graphics3D.BackendFactory {
 
+    // Temporary software-rendering comparison. Set to true to restore GL.
+    private static final boolean ENABLE_OPENGL = true;
+
     public MiniJvmMicro3dFactory() {
     }
 
     public Micro3dBackend create() {
-        return new MiniJvmMicro3dGlBackend();
+        return ENABLE_OPENGL ? new MiniJvmMicro3dGlBackend() : null;
     }
 }

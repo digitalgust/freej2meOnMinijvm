@@ -25,6 +25,7 @@ import java.nio.FloatBuffer;
 import java.util.Hashtable;
 
 import org.mini.glwrap.GLFrameBuffer;
+import org.mini.gl.GLMath;
 import org.mini.gui.callback.GCallBack;
 import org.mini.gui.GForm;
 import org.mini.gui.callback.GCmd;
@@ -858,6 +859,24 @@ public final class MiniJvmMicro3dGlBackend implements Micro3dBackend {
         int y1 = Math.min(ch, clipY + clipH);
         if (data != null && dataWidth == cw) {
             synchronized (mutable) {
+                // The native image compositor is equivalent to the original
+                // blend when the destination is opaque. For transparent
+                // destinations retain the old forced-opaque blending semantics.
+                boolean opaque = true;
+                for (int y = y0; y < y1 && opaque; y++) {
+                    int end = (y * cw + x1) * READBACK_BYTES_PER_PIXEL;
+                    for (int alpha = (y * cw + x0) * READBACK_BYTES_PER_PIXEL + 3; alpha < end; alpha += 4) {
+                        if ((data[alpha] & 0xff) != 0xff) {
+                            opaque = false;
+                            break;
+                        }
+                    }
+                }
+                if (opaque && x1 > x0 && y1 > y0 && GLMath.img_draw(data, cw, rgba, w,
+                        x0, y0, x1 - x0, y1 - y0,
+                        1f, 0f, 0f, 0f, 1f, 0f, 1f, false, 0) == 0) {
+                    return;
+                }
                 for (int y = y0; y < y1; y++) {
                     // miniJVM's GL readback already returns rows top-to-bottom for the
                     // FBO (the framebuffer/texture is created FLIPY), so no vertical
